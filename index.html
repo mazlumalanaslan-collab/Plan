@@ -96,7 +96,7 @@ function render(){if(mode==='rp')return rpR();$('#map').hidden=false;$('#rp').hi
   let c='<div class="chips">';for(let i=0;i<3;i++){const d=addD(T,i);c+=`<div class="chip ${d===sel?'on':''}" data-d="${d}"><b>${['Bugün','Yarın','Öbür gün'][i]}</b><small>${fmt(d,{day:'numeric',month:'short'})} · %${stat(d).p}</small></div>`}
   ap.innerHTML=c+`</div><div class="pg"><span>${fmt(sel,{weekday:'long'})}</span><div class="bar"><i style="width:${s.p}%"></i></div><span>${s.d}/${s.t} · %${s.p}</span></div>`;
   $('#dt').value=sel}
- else{ap.innerHTML=`<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div>`;$('#dt').value=eff}
+ else{ap.innerHTML=`<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div>`;$('#dt').value=eff}
  $('#tD').classList.toggle('on',m==='day');$('#tR').classList.toggle('on',m==='rt');save()}
 // pan / zoom
 const map=$('#map'),P=new Map();let pd=0;
@@ -182,4 +182,6 @@ $('#tD').onclick=()=>{mode='day';render();fit()};$('#tR').onclick=()=>{mode='rt'
 function tick(){const t=today();if(t!==lastToday){if(sel===lastToday)sel=t;lastToday=t;closeDays();render()}}
 closeDays();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(tick,30000);document.addEventListener('visibilitychange',tick);
 render();fit();
+function bk(){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='plan-yedek-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
+function rs(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0;modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek.',null,[['Evet, geri yükle',()=>{S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};save();closeDays();mode='day';sel=today();render();fit()},'dng'],['Vazgeç']])}catch(e){modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}};r.readAsText(f)};i.click()}
 </script></body></html>
