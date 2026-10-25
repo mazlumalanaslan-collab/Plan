@@ -44,6 +44,7 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
 .wk{display:flex;gap:6px;align-items:flex-end;height:110px;margin:8px 0}.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}.col div{background:var(--ac);border-radius:4px 4px 0 0}.col small,.cl small{color:var(--mut)}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}.cal>small{text-align:center}.cl{min-height:46px;border:1px solid var(--bd);border-radius:8px;padding:3px;display:flex;flex-direction:column;cursor:pointer}
 .pk{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px}.pk b{padding:9px 0;text-align:center;border:1px solid var(--bd);border-radius:8px;cursor:pointer;font-weight:400}.pk b.on{background:var(--ac);color:var(--ink);font-weight:700}
+.tab{font-size:12.5px;padding:0 2px}#zo,#zf,#zi{position:fixed;right:10px;z-index:5}#zi{bottom:calc(70px + env(safe-area-inset-bottom,0px))}#zf{bottom:calc(112px + env(safe-area-inset-bottom,0px))}#zo{bottom:calc(154px + env(safe-area-inset-bottom,0px))}
 </style></head><body>
 <div class="top">
  <div class="row" id="nav"><button class="ib" id="pv">‹</button><input type="date" id="dt"><button class="ib" id="nx">›</button></div>
@@ -52,7 +53,7 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
 <div id="map"><svg><g id="g"></g></svg></div>
 <div id="rp" hidden></div>
 <div class="bot">
- <button class="tab on" id="tD">Günlük</button><button class="tab" id="tR">Rutin</button><button class="tab" id="tP">Rapor</button>
+ <button class="tab on" id="tD">Günlük</button><button class="tab" id="tR">Rutin</button><button class="tab" id="tP">Rapor</button><button class="tab" id="tM">Hatırlatıcı</button>
  <button class="ib" id="zo">−</button><button class="ib" id="zf">⤢</button><button class="ib" id="zi">+</button>
 </div>
 <div id="md" hidden><div class="bx"><h3 id="mt"></h3><input id="mi"><div id="mb"></div></div></div>
@@ -64,10 +65,11 @@ const addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return 
 const fmt=(s,o)=>new Date(s+'T12:00').toLocaleDateString('tr-TR',o);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let RF={};try{RF=JSON.parse(localStorage.getItem('mmplan_rf'))||{}}catch(e){}
 let COL={};try{COL=JSON.parse(localStorage.getItem('mmplan_col'))||{}}catch(e){}
 let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S){S={nodes:[],done:{},hide:{},ren:{}};seed()}
-S.rep=S.rep||{};
+S.rep=S.rep||{};S.rem=S.rem||[];
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 function seed(){const f=today();const D=[["Sabah Rutini Yap",[["7:30 uyan"],["Yatağını Topla"],["Esneme Yap"],["Zıpla(2dk)"],["Şınav çek"],["Kişisel Bakım Rutini yap",[["Dişleri Fırçala"],["Dili Temizle"]]],["Kahvaltı yap+Emilim+1saat sonra su"]]],["Galeriyi işte düzenle"],["Yemekte faydalı video ize"],["En az 3 litre su iç"],["Yemekten 1saat sonra su iç"],["Acil yapılacaklar listesinden 1. birini yap"],["Akşam Rutini Yap",[["Gözlük takmaya başla"],["Looksmaxxing Rutini Yap",[["Göz egzersizi yap(20dk)"],["Bonsmensing yap(6dk)"]]],["Esneme yap"],["Yarın yapılacakları belirle"],["Kişisel bakım Rutini yap",[["Diş fırçala"],["Dili Temizle"],["Yüzü sabunla"]]],["Uykudan önce gül suyu kullan"],["Ağzı bantla +Burun bandı"],["00:00 önce uyu"]]]];
  (function a(l,p){l.forEach(([t,c])=>{const id=uid();S.nodes.push({id,p,tm:1,from:f,names:[[f,t]]});if(c)a(c,id)})})(D,null);save()}
@@ -78,17 +80,17 @@ let rk='d';const WD=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 const dow=D=>((new Date(D+'T12:00').getDay()+6)%7)+1;
 const recAt=(n,D)=>{let r=null;for(const[f,v]of n.rv||[])if(f<=D)r=v;return r};
 const recOk=(n,D)=>{if(n.p!==null)return true;const r=recAt(n,D);return !r||(r.t=='w'?r.d.includes(dow(D)):r.d.includes(+D.slice(8)))};
-const sfx=(n,D,m)=>{if(m!=='rt'||n.p!==null)return'';const r=recAt(n,D);return(r?' ('+(r.t=='w'?r.d.map(x=>WD[x-1]).join(', '):'ayın '+r.d.join(', ')+'. günü')+')':'')+(gp(n,D)?' ⏸ kapalı':'')};
+const sfx=(n,D,m)=>{if(n.rem&&m!=='rt')return' ('+n.rt.replace(':','.')+')';if(m!=='rt'||n.p!==null)return'';const r=recAt(n,D);return(r?' ('+(r.t=='w'?r.d.map(x=>WD[x-1]).join(', '):'ayın '+r.d.join(', ')+'. günü')+')':'')+(gp(n,D)?' ⏸ kapalı':'')};
 const act=(n,D,m)=>m==='rt'?(n.tm&&lv(n,D)&&(n.p!==null||(recAt(n,D)||{t:'d'}).t===rk)):n.tm?(lv(n,D)&&!gp(n,D)&&recOk(n,D)&&!S.hide[key(D,n.id)]):n.day===D;
 function txt(n,D,m){if(!n.tm)return n.t;if(m==='day'&&S.ren[key(D,n.id)])return S.ren[key(D,n.id)];let r=n.names[0][1];for(const[f,t]of n.names)if(f<=D)r=t;return r}
 const wrap=t=>{const w=t.split(/\s+/),r=[];for(let i=0;i<w.length;i+=4)r.push(w.slice(i,i+4).join(' '));return r};
-function lay(D,m,cv){const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m),d,k,hk:k.length>0};if(cv&&COL[n.id])o.k=[];return o});
+function lay(D,m,cv){if(m==='day')ensureRem(D);const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m),d,k,hk:k.length>0};if(cv&&COL[n.id])o.k=[];return o});
  const root={n:null,t:'Yapılacaklar listesi',d:0,k:walk(null,1)},cw=[],all=[];let y=14;
  (function pos(o){o.ls=o.d?wrap(o.t):[o.t];o.w=o.d?58+Math.max(...o.ls.map(s=>s.length))*7.6+(o.hk?26:0):190;cw[o.d]=Math.max(cw[o.d]||0,o.w);all.push(o);
   if(!o.k.length){y+=o.d?27+19*o.ls.length:46;o.y=y}else{o.k.forEach(pos);o.y=(o.k[0].y+o.k[o.k.length-1].y)/2}})(root);
  const xs=[0];for(let i=1;i<cw.length;i++)xs[i]=xs[i-1]+cw[i-1]+46;all.forEach(o=>o.x=xs[o.d]);return all}
 function stat(D){const r={t:0,g:0,y:0,r:0,u:0,it:[]};(function w(o,gp){o.k.forEach(c=>{if(c.k.length)w(c,gp||c.t);else{const s=S.done[key(D,c.n.id)]||0;r.t++;s==1?r.g++:s==2?r.y++:s==3?r.r++:r.u++;r.it.push({id:c.n.id,n:c.t,g:gp,s})}})})(lay(D,'day')[0],'');r.d=r.g;r.p=r.t?Math.round((r.g+r.y/2)/r.t*100):0;return r}
-function render(){if(mode==='rp')return rpR();$('#map').hidden=false;$('#rp').hidden=true;$('#nav').style.display='';$('#tP').classList.remove('on');const m=mode,D=m==='rt'?eff:sel,all=lay(D,m,1);
+function render(){if(mode==='rp')return rpR();if(mode==='rm')return rmR();zb('');$('#map').hidden=false;$('#rp').hidden=true;$('#nav').style.display='';$('#tP').classList.remove('on');$('#tM').classList.remove('on');const m=mode,D=m==='rt'?eff:sel,all=lay(D,m,1);
  let h='';all.forEach(o=>o.k.forEach(c=>{const x1=o.x+o.w,x2=c.x,mx=(x1+x2)/2;h+=`<path class="e" d="M${x1} ${o.y}C${mx} ${o.y} ${mx} ${c.y} ${x2} ${c.y}"/>`}));
  all.forEach(o=>{const{x,y,w}=o;
   if(!o.d){h+=`<rect class="r" x="${x}" y="${y-18}" width="${w}" height="36" rx="9"/><text class="rt" x="${x+14}" y="${y+5}">${esc(o.t)}</text><g data-a="add" data-id=""><circle class="pl" cx="${x+w-20}" cy="${y}" r="11"/><path class="pp" d="M${x+w-25} ${y}h10M${x+w-20} ${y-5}v10"/></g>`;return}
@@ -138,7 +140,7 @@ function ren(n){const D=mode==='rt'?eff:sel;ask('Yeniden adlandır',txt(n,D,mode
  if(mode==='day'){n.tm?S.ren[key(sel,n.id)]=t:n.t=t}
  else{n.names=n.names.filter(x=>x[0]!==eff);n.names.push([eff,t]);n.names.sort((a,b)=>a[0]<b[0]?-1:1)}render()})}
 const desc=id=>[id,...S.nodes.filter(n=>n.p===id).flatMap(n=>desc(n.id))];
-function del(n){if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
+function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){rr.on=0;closeN(rr.id)}}if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
  else{if(n.from>=eff){const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id))}else n.to=eff}render()}
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
@@ -158,7 +160,7 @@ const shM=(D,n)=>{const d=new Date(D+'T12:00');d.setDate(1);d.setMonth(d.getMont
 function agg(ds){const m={};past(ds).forEach(D=>rep(D).it.forEach(i=>{const nd=S.nodes.find(n=>n.id===i.id);if(!nd||!nd.tm)return;const o=m[i.id]||(m[i.id]={n:i.n,g:i.g,r:0,y:0});if(i.s==3)o.r++;if(i.s==2)o.y++}));return m}
 function closeDays(){const t=today(),a=S.nodes.reduce((m,n)=>n.from&&n.from<m?n.from:m,t);for(let d=a;d<t;d=addD(d,1))if(!S.rep[d])S.rep[d]=stat(d);save()}
 function stMenu(id){const n=get(id);modal(txt(n,sel,'day'),null,[['🟢 Tamamlandı (yeşil tik)',()=>setS(id,1)],['⚪ Yarım yapıldı (gri tik)',()=>setS(id,2)],['🔴 Yapılmadı (kırmızı çarpı)',()=>setS(id,3)],['Boş bırak',()=>setS(id,0)],['Kapat']])}
-function setS(id,v){const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
+function setS(id,v){const nd=get(id);if(v&&nd&&nd.rem)closeN(nd.rem);const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
 const bar=s=>{const T=s.t||1;return `<div class='sb'><i style='width:${s.g/T*100}%;background:#22c55e'></i><i style='width:${s.y/T*100}%;background:#9ca3af'></i><i style='width:${s.r/T*100}%;background:#ef4444'></i></div>`};
 function secs(s,st,c){const a=s.it.filter(i=>i.s==st);if(!a.length)return '';const g={};a.forEach(i=>(g[i.g||'Genel']=g[i.g||'Genel']||[]).push(i));
  return `<h4 class='c${st}'>${st==3?'Yapılmayan':'Yarım yapılan'} görevler (${a.length})</h4>`+Object.entries(g).map(([k,v])=>`<div class='gh'>${esc(k)}</div>`+v.map(i=>{const q=c&&c[i.id],n=q?(st==3?q.r+' gün yapılmadı':q.y+' gün yarım yapıldı'):'';return `<div class='it'>${esc(i.n)}${n?` <small>(bu hafta ${n})</small>`:''}</div>`}).join('')).join('')}
@@ -177,7 +179,7 @@ function monV(){const f=rd.slice(0,8)+'01',fd=new Date(f+'T12:00'),off=(fd.getDa
  return `<h3>Ortalama günlük tamamlanma: %${av(ok.map(d=>rep(d).p))}</h3>`+(b?`<div class='note'>En verimli gün: ${fmt(b,{day:'numeric',month:'long'})} (%${rep(b).p}) · En düşük: ${fmt(l,{day:'numeric',month:'long'})} (%${rep(l).p})</div>`:'')+
  `<div class='cal'>`+['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<small>${x}</small>`).join('')+'<span></span>'.repeat(off)+ds.map(d=>{const e=ok.includes(d),p=e?rep(d).p:0;return `<div class='cl' ${d<=today()?`data-det='${d}'`:''} style='${e?`background:color-mix(in srgb,var(--ok) ${p*.8}%,transparent)`:''}'><small>${+d.slice(8)}</small><b>${e?'%'+p:''}</b></div>`}).join('')+`</div>`+
  `<h4>Haftalara göre ortalama</h4>`+Object.entries(w).map(([k,a])=>`<div class='it'>${fmt(k,{day:'numeric',month:'short'})} haftası: %${av(a)}</div>`).join('')+`<h4>En sık yapılmayan rutin görevler</h4>`+top('r')+`<h4>En sık yarım yapılan rutin görevler</h4>`+top('y')}
-function rpR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;$('#nav').style.display='none';$('#sub').innerHTML='';$('#tD').classList.remove('on');$('#tR').classList.remove('on');$('#tP').classList.add('on');
+function rpR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;$('#nav').style.display='none';$('#sub').innerHTML='';$('#tD').classList.remove('on');$('#tR').classList.remove('on');$('#tP').classList.add('on');$('#tM').classList.remove('on');zb('none');
  let h=`<div class='chips'>`+[['d','Günlük'],['w','Haftalık'],['m','Aylık']].map(([k,l])=>`<div class='chip ${rv===k?'on':''}' data-rv='${k}'><b>${l}</b></div>`).join('')+`</div>`;
  if(det)h+=dayV(det,1);else{const ws=wS(rd),lb=rv=='d'?fmt(rd,{day:'numeric',month:'long',year:'numeric'}):rv=='w'?fmt(ws,{day:'numeric',month:'short'})+' – '+fmt(addD(ws,6),{day:'numeric',month:'short'}):fmt(rd,{month:'long',year:'numeric'});
  h+=`<div class='row' style='margin:8px 0'><button class='ib' data-sh='-1'>‹</button><div style='flex:1;text-align:center;font-weight:600'>${lb}</div><button class='ib' data-sh='1'>›</button></div>`+(rv=='d'?dayV(rd):rv=='w'?weekV():monV())}
@@ -190,10 +192,10 @@ $('#dt').onchange=e=>e.target.value&&go(e.target.value);
 $('#sub').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;if(c.dataset.rk){rk=c.dataset.rk;render();fit()}else go(c.dataset.d)};
 $('#tD').onclick=()=>{mode='day';render();fit()};$('#tR').onclick=()=>{mode='rt';eff=sel;render();fit()};
 function tick(){const t=today();if(t!==lastToday){if(sel===lastToday)sel=t;lastToday=t;closeDays();render()}}
-closeDays();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(tick,30000);document.addEventListener('visibilitychange',tick);
+closeDays();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(tick,30000);document.addEventListener('visibilitychange',tick);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,15000);{const q=new URLSearchParams(location.search).get('rem'),r=q&&S.rem.find(x=>x.id===q);if(r){sel=r.date;mode='day'}}chk();
 render();fit();
 function bk(){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='plan-yedek-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
-function rs(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0;modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek.',null,[['Evet, geri yükle',()=>{S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};save();closeDays();mode='day';sel=today();render();fit()},'dng'],['Vazgeç']])}catch(e){modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}};r.readAsText(f)};i.click()}
+function rs(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0;modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek.',null,[['Evet, geri yükle',()=>{S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];save();closeDays();mode='day';sel=today();render();fit()},'dng'],['Vazgeç']])}catch(e){modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}};r.readAsText(f)};i.click()}
 const colSave=()=>{try{localStorage.setItem('mmplan_col',JSON.stringify(COL))}catch(e){}};
 function pick(k,cur,ok){const w=k=='w',N=w?7:31;
  modal(w?'Hangi günlerde tekrarlansın?':'Ayın hangi günlerinde? (O ayda olmayan gün atlanır)',null,[['Kaydet',()=>{const d=[...document.querySelectorAll('#pk .on')].map(e=>+e.dataset.v);d.length?ok(d):pick(k,cur,ok)},'pri'],['İptal']]);
@@ -202,4 +204,36 @@ function pick(k,cur,ok){const w=k=='w',N=w?7:31;
 function rx(n){if(mode!=='rt'||n.p!==null)return[];const r=recAt(n,eff),x=[];
  if(r)x.push(['Günleri değiştir',()=>pick(r.t,r.d,d=>{n.rv=(n.rv||[]).filter(v=>v[0]!==eff);n.rv.push([eff,{t:r.t,d}]);n.rv.sort((a,b)=>a[0]<b[0]?-1:1);render()})]);
  const off=gp(n,eff);x.push([off?'Rutini etkinleştir':'Devre dışı bırak ('+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası)',()=>{n.gaps=n.gaps||[];if(off){const g=n.gaps.find(g=>eff>=g[0]&&(!g[1]||eff<g[1]));g[1]=eff}else n.gaps.push([eff,null]);render()}]);return x}
+// --- hatırlatıcılar ---
+function zb(v){['#zo','#zf','#zi'].forEach(q=>$(q).style.display=v)}
+function rfSave(){try{localStorage.setItem('mmplan_rf',JSON.stringify(RF))}catch(e){}}
+const ea=s=>esc(s).replace(/"/g,'&quot;');
+function ensureRem(D){(S.rem||[]).forEach(r=>{if(r.date!==D)return;const n=S.nodes.find(x=>x.rem===r.id);if(r.on&&!n)S.nodes.push({id:uid(),p:null,day:D,t:r.title,rem:r.id,rt:r.time});else if(!r.on&&n&&!S.done[key(D,n.id)])S.nodes=S.nodes.filter(x=>x!==n)})}
+async function regs(){try{return await navigator.serviceWorker.ready}catch(e){return null}}
+async function notify(r){const g=await regs();if(!g||!window.Notification||Notification.permission!=='granted')return;
+ g.showNotification('Hatırlatıcı: '+r.title,{body:(r.desc?r.desc+' · ':'')+'Saat '+r.time.replace(':','.'),tag:'rem-'+r.id,renotify:true,requireInteraction:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png',data:{url:'./?rem='+r.id}})}
+async function closeN(id){const g=await regs();if(!g)return;(await g.getNotifications({tag:'rem-'+id})).forEach(x=>x.close())}
+async function chk(){const now=new Date(),T=today();for(const r of S.rem||[]){if(!r.on||r.date!==T||now<new Date(r.date+'T'+r.time))continue;
+ ensureRem(T);const n=S.nodes.find(x=>x.rem===r.id);if(!n)continue;
+ if(S.done[key(T,n.id)]){closeN(r.id);continue}
+ const f=RF[r.id]||(RF[r.id]={n:0,t:0}),g=await regs(),a=g?(await g.getNotifications({tag:'rem-'+r.id})).length:0;
+ if(!f.n||(!a&&f.n<4&&Date.now()-f.t>=1800000)){await notify(r);f.n++;f.t=Date.now();rfSave()}}}
+const cal=r=>{const e=new Date(r.date+'T'+r.time),p=x=>String(x).padStart(2,'0'),a=r.date.replace(/-/g,'')+'T'+r.time.replace(':','')+'00';e.setMinutes(e.getMinutes()+15);
+ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(r.title)+'&details='+encodeURIComponent(r.desc||'')+'&dates='+a+'/'+iso(e).replace(/-/g,'')+'T'+p(e.getHours())+p(e.getMinutes())+'00'};
+function remSave(r,x){if(r){Object.assign(r,x);const n=S.nodes.find(y=>y.rem===r.id);if(n){n.t=x.title;n.rt=x.time;n.day=x.date}delete RF[r.id]}else S.rem.push({id:uid(),on:1,...x});rmR();save()}
+function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.time:'09:00',desc:r?r.desc:''};
+ modal(r?'Hatırlatıcıyı düzenle':'Yeni hatırlatıcı',null,[['Kaydet',()=>{const x={title:$('#r1').value.trim(),date:$('#r2').value,time:$('#r3').value,desc:$('#r4').value.trim()};
+  if(!x.title||!x.date||!x.time)return remForm(r,x);const go=()=>remSave(r,x);
+  if(new Date(x.date+'T'+x.time)<new Date())modal('Seçtiğin zaman geçmişte. Bildirim gönderilmez ama görev o günün listesine eklenir.',null,[['Yine de kaydet',go],['Düzelt',()=>remForm(r,x)]]);else go()},'pri'],['İptal']]);
+ $('#mb').insertAdjacentHTML('afterbegin',`<input id="r1" placeholder="Ne hatırlatılsın?" value="${ea(v.title)}"><input id="r2" type="date" value="${v.date}"><input id="r3" type="time" value="${v.time}"><input id="r4" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}">`)}
+function rmR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;zb('none');$('#nav').style.display='none';$('#sub').innerHTML='';['tD','tR','tP'].forEach(i=>$('#'+i).classList.remove('on'));$('#tM').classList.add('on');
+ const np=window.Notification?Notification.permission:'x';
+ let h=`<button class='tab on' style='width:100%;margin-top:8px' data-ra='new'>＋ Yeni hatırlatıcı</button><div class='note'>`+(np=='granted'?'Bildirim izni açık.':np=='denied'?'Bildirim izni kapalı: hatırlatıcılar kaydedilir ama bildirim gelmez. Chrome’un site ayarlarından izni açabilirsin.':np=='default'?`<button class='tab' data-ra='perm'>Bildirimleri aç</button>`:'Bu tarayıcı bildirimleri desteklemiyor.')+`<br>Bildirim; uygulama açıkken ya da arka planda canlıyken çalar. Uygulama tamamen kapalıyken zamanında gelmesi garanti değildir, garanti için “Takvime ekle”yi kullan. Sessiz mod, Rahatsız Etmeyin ve pil tasarrufu bildirimleri geciktirebilir.</div>`;
+ h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button><a class='ib' style='padding:9px 10px;text-decoration:none;box-sizing:border-box;color:inherit' target='_blank' rel='noopener' href='${cal(r)}'>Takvime ekle</a></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
+ el.innerHTML=h;save()}
+$('#tM').onclick=()=>{mode='rm';rmR()};
+$('#rp').addEventListener('click',e=>{if(mode!=='rm')return;const t=e.target.closest('[data-ra]');if(!t)return;const a=t.dataset.ra,r=S.rem.find(x=>x.id===t.dataset.id);
+ if(a=='new')remForm(null);else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='ed')remForm(r);
+ else if(a=='tog'){r.on=r.on?0:1;if(!r.on)closeN(r.id);rmR();save()}
+ else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{S.rem=S.rem.filter(x=>x!==r);const n=S.nodes.find(x=>x.rem===r.id);if(n&&!S.done[key(n.day,n.id)])S.nodes=S.nodes.filter(x=>x!==n);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
 </script></body></html>
