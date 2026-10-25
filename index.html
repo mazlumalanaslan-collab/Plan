@@ -140,7 +140,7 @@ function ren(n){const D=mode==='rt'?eff:sel;ask('Yeniden adlandır',txt(n,D,mode
  if(mode==='day'){n.tm?S.ren[key(sel,n.id)]=t:n.t=t}
  else{n.names=n.names.filter(x=>x[0]!==eff);n.names.push([eff,t]);n.names.sort((a,b)=>a[0]<b[0]?-1:1)}render()})}
 const desc=id=>[id,...S.nodes.filter(n=>n.p===id).flatMap(n=>desc(n.id))];
-function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){rr.on=0;closeN(rr.id)}}if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
+function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){rr.on=0;closeN(rr.id);ntCancel(rr)}}if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
  else{if(n.from>=eff){const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id))}else n.to=eff}render()}
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
@@ -160,7 +160,7 @@ const shM=(D,n)=>{const d=new Date(D+'T12:00');d.setDate(1);d.setMonth(d.getMont
 function agg(ds){const m={};past(ds).forEach(D=>rep(D).it.forEach(i=>{const nd=S.nodes.find(n=>n.id===i.id);if(!nd||!nd.tm)return;const o=m[i.id]||(m[i.id]={n:i.n,g:i.g,r:0,y:0});if(i.s==3)o.r++;if(i.s==2)o.y++}));return m}
 function closeDays(){const t=today(),a=S.nodes.reduce((m,n)=>n.from&&n.from<m?n.from:m,t);for(let d=a;d<t;d=addD(d,1))if(!S.rep[d])S.rep[d]=stat(d);save()}
 function stMenu(id){const n=get(id);modal(txt(n,sel,'day'),null,[['🟢 Tamamlandı (yeşil tik)',()=>setS(id,1)],['⚪ Yarım yapıldı (gri tik)',()=>setS(id,2)],['🔴 Yapılmadı (kırmızı çarpı)',()=>setS(id,3)],['Boş bırak',()=>setS(id,0)],['Kapat']])}
-function setS(id,v){const nd=get(id);if(v&&nd&&nd.rem)closeN(nd.rem);const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
+function setS(id,v){const nd=get(id);if(v&&nd&&nd.rem){closeN(nd.rem);ntCancel({id:nd.rem})}const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
 const bar=s=>{const T=s.t||1;return `<div class='sb'><i style='width:${s.g/T*100}%;background:#22c55e'></i><i style='width:${s.y/T*100}%;background:#9ca3af'></i><i style='width:${s.r/T*100}%;background:#ef4444'></i></div>`};
 function secs(s,st,c){const a=s.it.filter(i=>i.s==st);if(!a.length)return '';const g={};a.forEach(i=>(g[i.g||'Genel']=g[i.g||'Genel']||[]).push(i));
  return `<h4 class='c${st}'>${st==3?'Yapılmayan':'Yarım yapılan'} görevler (${a.length})</h4>`+Object.entries(g).map(([k,v])=>`<div class='gh'>${esc(k)}</div>`+v.map(i=>{const q=c&&c[i.id],n=q?(st==3?q.r+' gün yapılmadı':q.y+' gün yarım yapıldı'):'';return `<div class='it'>${esc(i.n)}${n?` <small>(bu hafta ${n})</small>`:''}</div>`}).join('')).join('')}
@@ -213,14 +213,14 @@ async function regs(){try{return await navigator.serviceWorker.ready}catch(e){re
 async function notify(r){const g=await regs();if(!g||!window.Notification||Notification.permission!=='granted')return;
  g.showNotification('Hatırlatıcı: '+r.title,{body:(r.desc?r.desc+' · ':'')+'Saat '+r.time.replace(':','.'),tag:'rem-'+r.id,renotify:true,requireInteraction:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png',data:{url:'./?rem='+r.id}})}
 async function closeN(id){const g=await regs();if(!g)return;(await g.getNotifications({tag:'rem-'+id})).forEach(x=>x.close())}
-async function chk(){const now=new Date(),T=today();for(const r of S.rem||[]){if(!r.on||r.date!==T||now<new Date(r.date+'T'+r.time))continue;
+async function chk(){ntSync();const now=new Date(),T=today();for(const r of S.rem||[]){if(!r.on||r.date!==T||now<new Date(r.date+'T'+r.time))continue;
  ensureRem(T);const n=S.nodes.find(x=>x.rem===r.id);if(!n)continue;
  if(S.done[key(T,n.id)]){closeN(r.id);continue}
- const f=RF[r.id]||(RF[r.id]={n:0,t:0}),g=await regs(),a=g?(await g.getNotifications({tag:'rem-'+r.id})).length:0;
+ if(NT())continue;const f=RF[r.id]||(RF[r.id]={n:0,t:0}),g=await regs(),a=g?(await g.getNotifications({tag:'rem-'+r.id})).length:0;
  if(!f.n||(!a&&f.n<4&&Date.now()-f.t>=1800000)){await notify(r);f.n++;f.t=Date.now();rfSave()}}}
 const cal=r=>{const e=new Date(r.date+'T'+r.time),p=x=>String(x).padStart(2,'0'),a=r.date.replace(/-/g,'')+'T'+r.time.replace(':','')+'00';e.setMinutes(e.getMinutes()+15);
  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(r.title)+'&details='+encodeURIComponent(r.desc||'')+'&dates='+a+'/'+iso(e).replace(/-/g,'')+'T'+p(e.getHours())+p(e.getMinutes())+'00'};
-function remSave(r,x){if(r){Object.assign(r,x);const n=S.nodes.find(y=>y.rem===r.id);if(n){n.t=x.title;n.rt=x.time;n.day=x.date}delete RF[r.id]}else S.rem.push({id:uid(),on:1,...x});rmR();save()}
+function remSave(r,x){if(r){Object.assign(r,x);const n=S.nodes.find(y=>y.rem===r.id);if(n){n.t=x.title;n.rt=x.time;n.day=x.date}delete RF[r.id]}else S.rem.push({id:uid(),on:1,...x});rmR();save();(async()=>{if(r)await ntCancel(r);ntSync()})()}
 function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.time:'09:00',desc:r?r.desc:''};
  modal(r?'Hatırlatıcıyı düzenle':'Yeni hatırlatıcı',null,[['Kaydet',()=>{const x={title:$('#r1').value.trim(),date:$('#r2').value,time:$('#r3').value,desc:$('#r4').value.trim()};
   if(!x.title||!x.date||!x.time)return remForm(r,x);const go=()=>remSave(r,x);
@@ -229,11 +229,30 @@ function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.ti
 function rmR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;zb('none');$('#nav').style.display='none';$('#sub').innerHTML='';['tD','tR','tP'].forEach(i=>$('#'+i).classList.remove('on'));$('#tM').classList.add('on');
  const np=window.Notification?Notification.permission:'x';
  let h=`<button class='tab on' style='width:100%;margin-top:8px' data-ra='new'>＋ Yeni hatırlatıcı</button><div class='note'>`+(np=='granted'?'Bildirim izni açık.':np=='denied'?'Bildirim izni kapalı: hatırlatıcılar kaydedilir ama bildirim gelmez. Chrome’un site ayarlarından izni açabilirsin.':np=='default'?`<button class='tab' data-ra='perm'>Bildirimleri aç</button>`:'Bu tarayıcı bildirimleri desteklemiyor.')+`<br>Bildirim; uygulama açıkken ya da arka planda canlıyken çalar. Uygulama tamamen kapalıyken zamanında gelmesi garanti değildir, garanti için “Takvime ekle”yi kullan. Sessiz mod, Rahatsız Etmeyin ve pil tasarrufu bildirimleri geciktirebilir.</div>`;
- h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button><a class='ib' style='padding:9px 10px;text-decoration:none;box-sizing:border-box;color:inherit' target='_blank' rel='noopener' href='${cal(r)}'>Takvime ekle</a></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
+ h+=ntBox();h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button><a class='ib' style='padding:9px 10px;text-decoration:none;box-sizing:border-box;color:inherit' target='_blank' rel='noopener' href='${cal(r)}'>Takvime ekle</a></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
  el.innerHTML=h;save()}
 $('#tM').onclick=()=>{mode='rm';rmR()};
 $('#rp').addEventListener('click',e=>{if(mode!=='rm')return;const t=e.target.closest('[data-ra]');if(!t)return;const a=t.dataset.ra,r=S.rem.find(x=>x.id===t.dataset.id);
- if(a=='new')remForm(null);else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='ed')remForm(r);
- else if(a=='tog'){r.on=r.on?0:1;if(!r.on)closeN(r.id);rmR();save()}
- else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{S.rem=S.rem.filter(x=>x!==r);const n=S.nodes.find(x=>x.rem===r.id);if(n&&!S.done[key(n.day,n.id)])S.nodes=S.nodes.filter(x=>x!==n);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
+ if(a=='new')remForm(null);else if(a in NTA)NTA[a]();else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='ed')remForm(r);
+ else if(a=='tog'){r.on=r.on?0:1;if(!r.on){closeN(r.id);ntCancel(r)}else ntSync();rmR();save()}
+ else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{ntCancel(r);S.rem=S.rem.filter(x=>x!==r);const n=S.nodes.find(x=>x.rem===r.id);if(n&&!S.done[key(n.day,n.id)])S.nodes=S.nodes.filter(x=>x!==n);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
+// --- ntfy: uygulama kapalıyken telefon bildirimi ---
+function NT(){try{return localStorage.getItem('mmplan_nt')||''}catch(e){return ''}}
+function offs(){return[0,10,25,45]}
+async function ntSync(){const tp=NT();if(!tp)return;const now=Date.now();
+ for(const k of Object.keys(RF))if(k[0]==='x')ntCancel({id:k.slice(1)});
+ for(const r of S.rem||[]){const t0=new Date(r.date+'T'+r.time).getTime(),n=S.nodes.find(x=>x.rem===r.id),dn=n&&S.done[key(r.date,n.id)];
+  if(!r.on||dn){if(RF['n'+r.id])await ntCancel(r);continue}
+  for(const[k,o]of offs().entries()){const at=t0+o*60000,id=r.id+'-'+k;if(at<=now+15000||at-now>2.9*864e5||RF['n'+id]===at)continue;
+   try{const res=await fetch('https://ntfy.sh/'+tp+'/'+id,{method:'POST',body:'Hatırlatıcı: '+r.title+' ('+r.time.replace(':','.')+')'+(r.desc?'\n'+r.desc:''),headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock',At:String(Math.floor(at/1e3)),Click:location.origin+location.pathname+'?rem='+r.id}});
+    if(res.ok){RF['n'+id]=at;RF['n'+r.id]=1;rfSave()}}catch(e){}}}}
+async function ntCancel(r){const tp=NT();if(!tp)return;let bad=0;
+ for(let k=0;k<offs().length;k++){const id=r.id+'-'+k;delete RF['n'+id];try{const res=await fetch('https://ntfy.sh/'+tp+'/'+id,{method:'DELETE'});if(!res.ok)bad=1}catch(e){bad=1}}
+ delete RF['n'+r.id];if(bad)RF['x'+r.id]=1;else delete RF['x'+r.id];rfSave()}
+function ntBox(){const tp=NT();if(!tp)return `<button class='tab' style='width:100%;margin-top:8px' data-ra='ntset'>📲 Uygulama kapalıyken de bildirim al (ücretsiz kurulum)</button>`;
+ return `<div class='note'>📲 Telefon bildirimi (ntfy) açık. Konu adın: <b>${tp}</b><br>1) Play Store’dan <b>ntfy</b> uygulamasını kur. 2) Uygulamada <b>+</b> → konu adını yapıştır → Subscribe. 3) ntfy’nin bildirim iznini aç. 4) Aşağıdan test et.<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='cp'>Konu adını kopyala</button><button class='ib' style='padding:0 10px' data-ra='test'>Test gönder</button><button class='ib' style='padding:0 10px' data-ra='ntoff'>Kaldır</button></div></div>`}
+const NTA={ntset(){try{localStorage.setItem('mmplan_nt','plan-'+Array.from(crypto.getRandomValues(new Uint8Array(10)),b=>b.toString(36).padStart(2,'0')).join(''))}catch(e){}rmR();ntSync()},
+ cp(){try{navigator.clipboard.writeText(NT()).then(()=>modal('Konu adı kopyalandı.',null,[['Tamam']]))}catch(e){modal('Kopyalanamadı, adı elle yaz: '+NT(),null,[['Tamam']])}},
+ async test(){try{const r=await fetch('https://ntfy.sh/'+NT(),{method:'POST',body:'Test: bu bildirim geldiyse kurulum tamam.',headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock'}});modal(r.ok?'Gönderildi. Telefonuna geldi mi? Gelmediyse ntfy uygulamasında konuya abone olduğunu kontrol et.':'Gönderilemedi.',null,[['Tamam']])}catch(e){modal('Gönderilemedi, internet bağlantını kontrol et.',null,[['Tamam']])}},
+ ntoff(){modal('Telefon bildirimi kaldırılsın mı? Planlanmış bildirimler iptal edilir.',null,[['Kaldır',async()=>{for(const r of S.rem)await ntCancel(r);try{localStorage.removeItem('mmplan_nt')}catch(e){}rmR()},'dng'],['Vazgeç']])}};
 </script></body></html>
