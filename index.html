@@ -45,6 +45,8 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}.cal>small{text-align:center}.cl{min-height:46px;border:1px solid var(--bd);border-radius:8px;padding:3px;display:flex;flex-direction:column;cursor:pointer}
 .pk{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px}.pk b{padding:9px 0;text-align:center;border:1px solid var(--bd);border-radius:8px;cursor:pointer;font-weight:400}.pk b.on{background:var(--ac);color:var(--ink);font-weight:700}
 .tab{font-size:12.5px;padding:0 2px}#zo,#zf,#zi{position:fixed;right:10px;z-index:5}#zi{bottom:calc(70px + env(safe-area-inset-bottom,0px))}#zf{bottom:calc(112px + env(safe-area-inset-bottom,0px))}#zo{bottom:calc(154px + env(safe-area-inset-bottom,0px))}
+.bx{max-height:88vh;overflow:auto}.mi{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bd)}.mi span{flex:1;min-width:0;word-break:break-word}.mi b,.ma b{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:400}.ma{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}.ma b{text-align:center}
+#mv{position:fixed;inset:0;background:#000e;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;box-sizing:border-box;color:#fff}#mv[hidden]{display:none}
 </style></head><body>
 <div class="top">
  <div class="row" id="nav"><button class="ib" id="pv">‹</button><input type="date" id="dt"><button class="ib" id="nx">›</button></div>
@@ -56,6 +58,7 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
  <button class="tab on" id="tD">Günlük</button><button class="tab" id="tR">Rutin</button><button class="tab" id="tP">Rapor</button><button class="tab" id="tM">Hatırlatıcı</button>
  <button class="ib" id="zo">−</button><button class="ib" id="zf">⤢</button><button class="ib" id="zi">+</button>
 </div>
+<div id="mv" hidden></div>
 <div id="md" hidden><div class="bx"><h3 id="mt"></h3><input id="mi"><div id="mb"></div></div></div>
 <script>
 const K='mmplan_v1',$=s=>document.querySelector(s);
@@ -69,7 +72,7 @@ let RF={};try{RF=JSON.parse(localStorage.getItem('mmplan_rf'))||{}}catch(e){}
 let COL={};try{COL=JSON.parse(localStorage.getItem('mmplan_col'))||{}}catch(e){}
 let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S){S={nodes:[],done:{},hide:{},ren:{}};seed()}
-S.rep=S.rep||{};S.rem=S.rem||[];
+S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 function seed(){const f=today();const D=[["Sabah Rutini Yap",[["7:30 uyan"],["Yatağını Topla"],["Esneme Yap"],["Zıpla(2dk)"],["Şınav çek"],["Kişisel Bakım Rutini yap",[["Dişleri Fırçala"],["Dili Temizle"]]],["Kahvaltı yap+Emilim+1saat sonra su"]]],["Galeriyi işte düzenle"],["Yemekte faydalı video ize"],["En az 3 litre su iç"],["Yemekten 1saat sonra su iç"],["Acil yapılacaklar listesinden 1. birini yap"],["Akşam Rutini Yap",[["Gözlük takmaya başla"],["Looksmaxxing Rutini Yap",[["Göz egzersizi yap(20dk)"],["Bonsmensing yap(6dk)"]]],["Esneme yap"],["Yarın yapılacakları belirle"],["Kişisel bakım Rutini yap",[["Diş fırçala"],["Dili Temizle"],["Yüzü sabunla"]]],["Uykudan önce gül suyu kullan"],["Ağzı bantla +Burun bandı"],["00:00 önce uyu"]]]];
  (function a(l,p){l.forEach(([t,c])=>{const id=uid();S.nodes.push({id,p,tm:1,from:f,names:[[f,t]]});if(c)a(c,id)})})(D,null);save()}
@@ -84,7 +87,7 @@ const sfx=(n,D,m)=>{if(n.rem&&m!=='rt')return' ('+n.rt.replace(':','.')+')';if(m
 const act=(n,D,m)=>m==='rt'?(n.tm&&lv(n,D)&&(n.p!==null||(recAt(n,D)||{t:'d'}).t===rk)):n.tm?(lv(n,D)&&!gp(n,D)&&recOk(n,D)&&!S.hide[key(D,n.id)]):n.day===D;
 function txt(n,D,m){if(!n.tm)return n.t;if(m==='day'&&S.ren[key(D,n.id)])return S.ren[key(D,n.id)];let r=n.names[0][1];for(const[f,t]of n.names)if(f<=D)r=t;return r}
 const wrap=t=>{const w=t.split(/\s+/),r=[];for(let i=0;i<w.length;i+=4)r.push(w.slice(i,i+4).join(' '));return r};
-function lay(D,m,cv){if(m==='day')ensureRem(D);const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m),d,k,hk:k.length>0};if(cv&&COL[n.id])o.k=[];return o});
+function lay(D,m,cv){if(m==='day')ensureRem(D);const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m)+(cv?mk(n,D,m):''),d,k,hk:k.length>0};if(cv&&COL[n.id])o.k=[];return o});
  const root={n:null,t:'Yapılacaklar listesi',d:0,k:walk(null,1)},cw=[],all=[];let y=14;
  (function pos(o){o.ls=o.d?wrap(o.t):[o.t];o.w=o.d?58+Math.max(...o.ls.map(s=>s.length))*7.6+(o.hk?26:0):190;cw[o.d]=Math.max(cw[o.d]||0,o.w);all.push(o);
   if(!o.k.length){y+=o.d?27+19*o.ls.length:46;o.y=y}else{o.k.forEach(pos);o.y=(o.k[0].y+o.k[o.k.length-1].y)/2}})(root);
@@ -128,7 +131,7 @@ function modal(title,val,btns){$('#mt').textContent=title;const i=$('#mi');i.hid
  const b=$('#mb');b.innerHTML='';btns.forEach(([l,f,c])=>{const e=document.createElement('button');e.textContent=l;if(c)e.className=c;e.onclick=()=>{$('#md').hidden=true;f&&f(i.value.trim())};b.appendChild(e)});
  $('#md').hidden=false;if(val!==null)setTimeout(()=>i.focus(),50)}
 $('#mi').onkeydown=e=>{if(e.key==='Enter'){const p=$('#mb .pri');p&&p.click()}};
-$('#md').onclick=e=>{if(e.target.id==='md')$('#md').hidden=true};
+$('#md').onclick=e=>{if(e.target.id==='md'&&!modal.lock)$('#md').hidden=true};
 const ask=(t,v,ok)=>modal(t,v,[['Kaydet',s=>s&&ok(s),'pri'],['İptal']]);
 // actions
 const get=id=>S.nodes.find(n=>n.id===id);
@@ -145,7 +148,7 @@ function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){rr.on=0;cl
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
 function menu(n){const D=mode==='rt'?eff:sel,tm=n.tm&&mode==='day';
- modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),
+ modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📎 Medya',()=>mgr(n)],
  [mode==='rt'?'Rutinden kaldır ('+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası)':tm?'Sadece bu gün için gizle':'Sil',()=>del(n),'dng'],['Kapat']])}
 $('#g').onclick=e=>{if(mv>6)return;const t=e.target.closest('[data-a]');if(!t)return;const id=t.dataset.id,a=t.dataset.a;
  if(a==='chk')stMenu(id)
@@ -194,8 +197,8 @@ $('#tD').onclick=()=>{mode='day';render();fit()};$('#tR').onclick=()=>{mode='rt'
 function tick(){const t=today();if(t!==lastToday){if(sel===lastToday)sel=t;lastToday=t;closeDays();render()}}
 closeDays();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(tick,30000);document.addEventListener('visibilitychange',tick);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,15000);{const q=new URLSearchParams(location.search).get('rem'),r=q&&S.rem.find(x=>x.id===q);if(r){sel=r.date;mode='day'}}chk();
 render();fit();
-function bk(){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='plan-yedek-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
-function rs(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0;modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek.',null,[['Evet, geri yükle',()=>{S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];save();closeDays();mode='day';sel=today();render();fit()},'dng'],['Vazgeç']])}catch(e){modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}};r.readAsText(f)};i.click()}
+function bkLite(){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='plan-yedek-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
+function rsOld(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0;modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek.',null,[['Evet, geri yükle',()=>{S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};save();closeDays();mode='day';sel=today();render();fit()},'dng'],['Vazgeç']])}catch(e){modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}};r.readAsText(f)};i.click()}
 const colSave=()=>{try{localStorage.setItem('mmplan_col',JSON.stringify(COL))}catch(e){}};
 function pick(k,cur,ok){const w=k=='w',N=w?7:31;
  modal(w?'Hangi günlerde tekrarlansın?':'Ayın hangi günlerinde? (O ayda olmayan gün atlanır)',null,[['Kaydet',()=>{const d=[...document.querySelectorAll('#pk .on')].map(e=>+e.dataset.v);d.length?ok(d):pick(k,cur,ok)},'pri'],['İptal']]);
@@ -229,11 +232,11 @@ function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.ti
 function rmR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;zb('none');$('#nav').style.display='none';$('#sub').innerHTML='';['tD','tR','tP'].forEach(i=>$('#'+i).classList.remove('on'));$('#tM').classList.add('on');
  const np=window.Notification?Notification.permission:'x';
  let h=`<button class='tab on' style='width:100%;margin-top:8px' data-ra='new'>＋ Yeni hatırlatıcı</button><button class='tab' style='width:100%;margin-top:6px' data-ra='set'>⚙ Bildirim ayarları ${RS?'▴':'▾'}</button>`;let g=`<div class='note'>`+(np=='granted'?'Bildirim izni açık.':np=='denied'?'Bildirim izni kapalı: hatırlatıcılar kaydedilir ama bildirim gelmez. Chrome’un site ayarlarından izni açabilirsin.':np=='default'?`<button class='tab' data-ra='perm'>Bildirimleri aç</button>`:'Bu tarayıcı bildirimleri desteklemiyor.')+`<br>Bildirim; uygulama açıkken ya da arka planda canlıyken çalar. Uygulama kapalıyken bildirimler ntfy üzerinden gelir. Sessiz mod, Rahatsız Etmeyin ve pil tasarrufu bildirimleri geciktirebilir.</div>`;
- h+=(RS||!NT()||np!='granted')?g+ntBox():'';h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
+ h+=(RS||!NT()||np!='granted')?g+ntBox():'';h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='med' data-id='${r.id}'>📎${(r.media||[]).length||''}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
  el.innerHTML=h;save()}
 $('#tM').onclick=()=>{mode='rm';rmR()};
 $('#rp').addEventListener('click',e=>{if(mode!=='rm')return;const t=e.target.closest('[data-ra]');if(!t)return;const a=t.dataset.ra,r=S.rem.find(x=>x.id===t.dataset.id);
- if(a=='new')remForm(null);else if(a in NTA)NTA[a]();else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='ed')remForm(r);
+ if(a=='new')remForm(null);else if(a in NTA)NTA[a]();else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='med')mgr({rem:r.id,t:r.title,p:null});else if(a=='ed')remForm(r);
  else if(a=='tog'){r.on=r.on?0:1;if(!r.on){closeN(r.id);ntCancel(r)}else ntSync();rmR();save()}
  else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{ntCancel(r);S.rem=S.rem.filter(x=>x!==r);const n=S.nodes.find(x=>x.rem===r.id);if(n&&!S.done[key(n.day,n.id)])S.nodes=S.nodes.filter(x=>x!==n);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
 // --- ntfy: uygulama kapalıyken telefon bildirimi ---
@@ -256,4 +259,76 @@ const NTA={set(){RS=!RS;rmR()},ntset(){RS=1;try{localStorage.setItem('mmplan_nt'
  cp(){try{navigator.clipboard.writeText(NT()).then(()=>modal('Konu adı kopyalandı.',null,[['Tamam']]))}catch(e){modal('Kopyalanamadı, adı elle yaz: '+NT(),null,[['Tamam']])}},
  async test(){try{const r=await fetch('https://ntfy.sh/'+NT(),{method:'POST',body:'Test: bu bildirim geldiyse kurulum tamam.',headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock'}});modal(r.ok?'Gönderildi. Telefonuna geldi mi? Gelmediyse ntfy uygulamasında konuya abone olduğunu kontrol et.':'Gönderilemedi.',null,[['Tamam']])}catch(e){modal('Gönderilemedi, internet bağlantını kontrol et.',null,[['Tamam']])}},
  ntoff(){modal('Telefon bildirimi kaldırılsın mı? Planlanmış bildirimler iptal edilir.',null,[['Kaldır',async()=>{for(const r of S.rem)await ntCancel(r);try{localStorage.removeItem('mmplan_nt')}catch(e){}rmR()},'dng'],['Vazgeç']])}};
+// --- medya ---
+let MC=null,_db;
+const db=()=>_db||(_db=new Promise((ok,no)=>{const q=indexedDB.open('mmplan_media',1);q.onupgradeneeded=()=>q.result.createObjectStore('m',{keyPath:'id'});q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)}));
+const tx=async(m,f)=>{const d=await db();return new Promise((ok,no)=>{const t=d.transaction('m',m),r=f(t.objectStore('m'));t.oncomplete=()=>ok(r&&r.result);t.onerror=t.onabort=()=>no(t.error)})};
+const mPut=r=>tx('readwrite',s=>s.put(r)),mGet=id=>tx('readonly',s=>s.get(id)),mDel=id=>tx('readwrite',s=>s.delete(id)),mKeys=()=>tx('readonly',s=>s.getAllKeys());
+const fz=b=>b>1e9?(b/1e9).toFixed(2)+' GB':b>1e6?(b/1e6).toFixed(1)+' MB':Math.ceil(b/1e3)+' KB';
+const fd=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const dura=f=>new Promise(ok=>{if(f.type.startsWith('image'))return ok(0);const e=document.createElement(f.type.startsWith('video')?'video':'audio'),u=URL.createObjectURL(f);e.preload='metadata';e.onloadedmetadata=()=>{URL.revokeObjectURL(u);ok(isFinite(e.duration)?Math.round(e.duration):0)};e.onerror=()=>{URL.revokeObjectURL(u);ok(0)};setTimeout(()=>ok(0),4000);e.src=u});
+function hold(n){if(n.rem){const r=S.rem.find(x=>x.id===n.rem);if(r)return{g:()=>r.media||[],s:v=>r.media=v}}
+ if(n.tm&&mode==='day'){const k=key(sel,n.id);return{g:()=>S.dm[k]||[],s:v=>S.dm[k]=v}}
+ return{g:()=>n.media||[],s:v=>n.media=v}}
+function mids(n,D,m){let a=[];if(n.rem){const r=(S.rem||[]).find(x=>x.id===n.rem);if(r)a=r.media||[]}
+ if(n.tm){a=a.concat(n.media||[]);if(m==='day')a=a.concat((S.dm||{})[key(D,n.id)]||[])}else if(!n.rem)a=n.media||[];return a}
+function mk(n,D,m){const c=mids(n,D,m).length;return c?' 📎'+c:''}
+async function addFiles(fs,dur){const own=MC.own;let bad=[];
+ for(const f of fs){if(!/^(image|video|audio)\//.test(f.type)){bad.push((f.name||'dosya')+': desteklenmeyen biçim');continue}
+  try{const id='m'+uid()+Date.now().toString(36),d=dur||await dura(f);await mPut({id,blob:f,name:f.name||'kayit',type:f.type,size:f.size,dur:d,ts:Date.now()});own.s([...own.g(),id])}
+  catch(e){bad.push((f.name||'dosya')+': '+(e&&e.name=='QuotaExceededError'?'depolama alanı yetersiz':'kaydedilemedi'))}}
+ try{navigator.storage.persist()}catch(e){}save();render();bad.length?modal(bad.join(' • '),null,[['Tamam',()=>mgr(MC.n)]]):mgr(MC.n)}
+function pickF(acc,cap,multi){const i=document.createElement('input');i.type='file';i.accept=acc;if(cap)i.setAttribute('capture',cap);if(multi)i.multiple=true;i.onchange=()=>i.files.length&&addFiles([...i.files]);i.click()}
+async function mgr(n){MC={n,own:hold(n)};const D=mode==='rt'?eff:sel,ids=mids(n,D,mode),mine=MC.own.g(),rc=await Promise.all(ids.map(i=>mGet(i).catch(()=>null)));
+ let est='';try{const e=await navigator.storage.estimate();est='Depolama: '+fz(e.usage)+' kullanılıyor / kota '+fz(e.quota)}catch(x){}
+ modal('📎 '+txt(n,D,mode),null,[['Kapat',()=>render()]]);
+ $('#mb').insertAdjacentHTML('afterbegin',`<div class="ma"><b data-ma="photo">📷 Fotoğraf çek</b><b data-ma="video">🎥 Video kaydet</b><b data-ma="audio">🎙 Ses kaydet</b><b data-ma="file">📁 Dosya seç</b></div>`+(ids.length?ids.map((id,i)=>{const r=rc[i],my=mine.includes(id);return r?`<div class="mi"><span>${r.type.startsWith('image')?'🖼':r.type.startsWith('video')?'🎞':'🎧'} ${esc(r.name)}<br><small>${r.type.split('/')[0]} · ${fz(r.size)}${r.dur?' · '+fd(r.dur):''}${my?'':' · rutinden (tüm günler)'}</small></span><b data-mo="${id}">Aç</b>${my?`<b data-md="${id}">Sil</b>`:''}</div>`:`<div class="mi"><span>Dosya bulunamadı (bu cihazda yok)</span>${my?`<b data-md="${id}">Kaldır</b>`:''}</div>`}).join(''):'<div class="note">Henüz medya yok.</div>')+`<div class="note">${est}${mode==='day'&&n.tm?'<br>Burada eklediğin medya sadece bu güne ait olur. Tüm günlerde görünsün istiyorsan Rutin sekmesinden ekle.':''}</div>`)}
+async function view(id){const r=await mGet(id);if(!r)return modal('Dosya bulunamadı.',null,[['Tamam']]);const u=URL.createObjectURL(r.blob),v=$('#mv'),t=r.type.split('/')[0];
+ v.innerHTML=`<button class="ib" onclick="closeV()" style="padding:0 14px">✕ Kapat</button>`+(t=='image'?`<img src="${u}" style="max-width:100%;max-height:78vh">`:t=='video'?`<video src="${u}" controls autoplay style="max-width:100%;max-height:78vh"></video>`:`<audio src="${u}" controls autoplay style="width:100%"></audio>`)+`<small style="color:#ccc">${esc(r.name)} · ${r.type} · ${fz(r.size)}${r.dur?' · '+fd(r.dur):''}</small>`;v._u=u;v.hidden=false}
+function closeV(){const v=$('#mv');v.innerHTML='';v.hidden=true;try{URL.revokeObjectURL(v._u)}catch(e){}}
+async function recAudio(){if(!window.MediaRecorder)return modal('Bu tarayıcı uygulama içi ses kaydını desteklemiyor.',null,[['Tamam',()=>mgr(MC.n)]]);
+ let ms;try{ms=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return modal('Mikrofon izni verilmedi. Chrome’un site ayarlarından mikrofona izin ver.',null,[['Tamam',()=>mgr(MC.n)]])}
+ const mt=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(x=>MediaRecorder.isTypeSupported(x));let ch=[],acc=0,t0=Date.now(),iv;
+ const mr=new MediaRecorder(ms,{mimeType:mt,audioBitsPerSecond:256000});
+ const el=()=>Math.round((acc+(mr.state==='recording'?Date.now()-t0:0))/1000),tick=()=>{$('#mt').textContent=(mr.state==='paused'?'⏸ Duraklatıldı ':'🔴 Kayıt ')+fd(el())};
+ const stop=()=>{if(mr.state==='recording')acc+=Date.now()-t0;mr.stop()};
+ const ui=()=>{modal.lock=1;modal('Ses kaydı',null,mr.state==='paused'?[['▶ Devam et',()=>{mr.resume();t0=Date.now();ui()}],['⏹ Durdur',stop]]:[['⏸ Duraklat',()=>{acc+=Date.now()-t0;mr.pause();ui()}],['⏹ Durdur',stop]]);tick()};
+ mr.ondataavailable=e=>e.data.size&&ch.push(e.data);
+ mr.onstop=()=>{clearInterval(iv);ms.getTracks().forEach(t=>t.stop());modal.lock=0;const b=new Blob(ch,{type:mr.mimeType||'audio/webm'}),u=URL.createObjectURL(b),d=Math.round(acc/1000);
+  modal('Kayıt tamam — '+fd(d)+' · '+fz(b.size),null,[['✔ Kabul et ve ekle',()=>{URL.revokeObjectURL(u);addFiles([new File([b],'ses-'+today()+'-'+Date.now().toString(36)+(b.type.includes('mp4')?'.m4a':'.webm'),{type:b.type})],d)}],['↻ Yeniden kaydet',()=>{URL.revokeObjectURL(u);recAudio()}],['Vazgeç',()=>{URL.revokeObjectURL(u);mgr(MC.n)}]]);
+  $('#mb').insertAdjacentHTML('afterbegin',`<audio controls src="${u}" style="width:100%;margin-bottom:8px"></audio>`)};
+ mr.start(1000);iv=setInterval(tick,500);ui()}
+$('#mb').addEventListener('click',e=>{const t=e.target.closest('[data-ma],[data-mo],[data-md]');if(!t||!MC)return;const d=t.dataset;
+ if(d.mo)view(d.mo);else if(d.md)modal('Silinsin mi?',null,[['Sil',async()=>{MC.own.s(MC.own.g().filter(x=>x!==d.md));try{await mDel(d.md)}catch(x){}save();render();mgr(MC.n)},'dng'],['Vazgeç',()=>mgr(MC.n)]]);
+ else if(d.ma=='audio')recAudio();else if(d.ma=='file')pickF('image/*,video/*,audio/*','',1);else pickF(d.ma=='photo'?'image/*':'video/*','environment',0)});
+async function gcMedia(){try{const ref=new Set();S.nodes.forEach(n=>(n.media||[]).forEach(i=>ref.add(i)));Object.values(S.dm).forEach(a=>a.forEach(i=>ref.add(i)));S.rem.forEach(r=>(r.media||[]).forEach(i=>ref.add(i)));
+ for(const k of await mKeys())if(!ref.has(k)){const r=await mGet(k);if(r&&Date.now()-r.ts>6048e5)await mDel(k)}}catch(e){}}
+setTimeout(gcMedia,5000);
+// --- tam yedek / yeni telefona taşıma ---
+function bk(){modal('Ne yedeklensin?',null,[['Her şey (medya dahil) — yeni telefona taşımak için',bkFull,'pri'],['Sadece görevler ve raporlar (küçük dosya)',bkLite],['Vazgeç']])}
+async function bkFull(){modal.lock=1;modal('Yedek hazırlanıyor…',null,[]);const ids=new Set();
+ S.nodes.forEach(n=>(n.media||[]).forEach(i=>ids.add(i)));Object.values(S.dm||{}).forEach(a=>a.forEach(i=>ids.add(i)));(S.rem||[]).forEach(r=>(r.media||[]).forEach(i=>ids.add(i)));
+ const parts=[],list=[];let off=0,miss=0;
+ for(const id of ids){let r=null;try{r=await mGet(id)}catch(e){}if(!r||!r.blob){miss++;continue}list.push({id,name:r.name,type:r.type,size:r.size,dur:r.dur,ts:r.ts,off,len:r.blob.size});parts.push(r.blob);off+=r.blob.size}
+ try{const te=new TextEncoder(),h=te.encode(JSON.stringify({v:1,S,COL,nt:NT(),media:list})),ln=new Uint8Array(4);new DataView(ln.buffer).setUint32(0,h.length);
+  const b=new Blob([te.encode('MMPLAN01'),ln,h,...parts],{type:'application/octet-stream'}),a=document.createElement('a'),u=URL.createObjectURL(b);
+  a.href=u;a.download='plan-yedek-'+today()+'.plan';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e5);
+  modal.lock=0;modal('Yedek hazır ('+fz(b.size)+', '+list.length+' medya). İndirilenler klasörüne “plan-yedek-'+today()+'.plan” adıyla iniyor. Dosyayı yeni telefona Quick Share, Drive ya da USB ile gönder.'+(miss?' Uyarı: '+miss+' medya dosyası bu cihazda bulunamadığı için yedeğe girmedi.':''),null,[['Tamam']])}
+ catch(e){modal.lock=0;modal('Yedek oluşturulamadı (dosya çok büyük ya da bellek yetersiz olabilir). “Sadece görevler ve raporlar” yedeğini dene.',null,[['Tamam']])}}
+function rs(){const i=document.createElement('input');i.type='file';i.accept='.plan,.json,application/json,application/octet-stream';
+ i.onchange=async()=>{const f=i.files[0];if(!f)return;let d,md=[],o0=0,nt='',col=null;
+  try{const hd=new Uint8Array(await f.slice(0,12).arrayBuffer());
+   if(String.fromCharCode(...hd.slice(0,8))==='MMPLAN01'){const hl=new DataView(hd.buffer).getUint32(8),h=JSON.parse(await f.slice(12,12+hl).text());d=h.S;md=h.media||[];o0=12+hl;nt=h.nt||'';col=h.COL}
+   else d=JSON.parse(await f.text());
+   if(!d||!Array.isArray(d.nodes)||typeof d.done!=='object')throw 0}
+  catch(e){return modal('Bu dosya geçerli bir yedek değil.',null,[['Tamam']])}
+  modal('Yedek yüklensin mi? Şu anki veriler silinip yedektekiler gelecek'+(md.length?' ('+md.length+' medya dosyası dahil).':'.'),null,[['Evet, geri yükle',async()=>{
+   modal.lock=1;modal('Yükleniyor…',null,[]);let bad=0;
+   for(let k=0;k<md.length;k++){const m=md[k];$('#mt').textContent='Medya yükleniyor '+(k+1)+'/'+md.length;
+    try{await mPut({id:m.id,blob:f.slice(o0+m.off,o0+m.off+m.len,m.type),name:m.name,type:m.type,size:m.size,dur:m.dur,ts:m.ts})}catch(e){bad++}}
+   S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};
+   if(col){COL=col;colSave()}if(nt){try{localStorage.setItem('mmplan_nt',nt)}catch(e){}}
+   save();closeDays();mode='day';sel=today();render();fit();modal.lock=0;
+   modal(bad?'Veriler geri yüklendi ama '+bad+' medya dosyası yüklenemedi (depolama dolu olabilir).':'Her şey geri yüklendi.'+(nt?' Hatırlatıcı bildirimleri için yeni telefonda ntfy’de aynı konuya abone ol: '+nt:''),null,[['Tamam']])},'dng'],['Vazgeç']])};
+ i.click()}
 </script></body></html>
