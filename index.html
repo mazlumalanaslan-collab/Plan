@@ -48,6 +48,8 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
 .bx{max-height:88vh;overflow:auto}.mi{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bd)}.mi span{flex:1;min-width:0;word-break:break-word}.mi b,.ma b{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:400}.ma{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}.ma b{text-align:center}
 #mv{position:fixed;inset:0;background:#000e;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;box-sizing:border-box;color:#fff}#mv[hidden]{display:none}
 .ds{font-size:10.5px;fill:var(--mut);cursor:pointer}.ds.on{fill:var(--ac)}.bx textarea{width:100%;box-sizing:border-box;min-height:120px;max-height:50vh;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);padding:8px;resize:vertical;font:inherit;margin-bottom:8px}
+#al{position:fixed;inset:0;z-index:40;background:#7a1010;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;box-sizing:border-box}#al[hidden]{display:none}.aT{font-size:28px;font-weight:700}.aD{opacity:.9;max-width:420px}.aB{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}.aB button{height:56px;border-radius:14px;border:0;font-size:18px}.aB .k{background:#fff;color:#7a1010;font-weight:700}#aS{font-size:13px;opacity:.85}
+.bx select{width:100%;box-sizing:border-box;height:42px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);padding:0 8px;margin-bottom:10px}
 </style></head><body>
 <div class="top">
  <div class="row" id="nav"><button class="ib" id="pv">‹</button><input type="date" id="dt"><button class="ib" id="nx">›</button></div>
@@ -60,6 +62,7 @@ input[type=date]{background:var(--pn);border:1px solid var(--bd);border-radius:1
  <button class="ib" id="zo">−</button><button class="ib" id="zf">⤢</button><button class="ib" id="zi">+</button>
 </div>
 <div id="mv" hidden></div>
+<div id="al" hidden></div>
 <div id="md" hidden><div class="bx"><h3 id="mt"></h3><input id="mi"><div id="mb"></div></div></div>
 <script>
 const K='mmplan_v1',$=s=>document.querySelector(s);
@@ -69,11 +72,13 @@ const addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return 
 const fmt=(s,o)=>new Date(s+'T12:00').toLocaleDateString('tr-TR',o);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let ring=null,q=[],ac=null,sv=0,vv=0,MC2=null;
+let AL={fired:{},sn:{}};try{AL=JSON.parse(localStorage.getItem('mmplan_al'))||AL}catch(e){}
 let RF={};try{RF=JSON.parse(localStorage.getItem('mmplan_rf'))||{}}catch(e){}
 let COL={};try{COL=JSON.parse(localStorage.getItem('mmplan_col'))||{}}catch(e){}
 let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S){S={nodes:[],done:{},hide:{},ren:{}};seed()}
-S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};S.dd=S.dd||{};
+S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};S.dd=S.dd||{};S.ia=S.ia||[];
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 function seed(){const f=today();const D=[["Sabah Rutini Yap",[["7:30 uyan"],["Yatağını Topla"],["Esneme Yap"],["Zıpla(2dk)"],["Şınav çek"],["Kişisel Bakım Rutini yap",[["Dişleri Fırçala"],["Dili Temizle"]]],["Kahvaltı yap+Emilim+1saat sonra su"]]],["Galeriyi işte düzenle"],["Yemekte faydalı video ize"],["En az 3 litre su iç"],["Yemekten 1saat sonra su iç"],["Acil yapılacaklar listesinden 1. birini yap"],["Akşam Rutini Yap",[["Gözlük takmaya başla"],["Looksmaxxing Rutini Yap",[["Göz egzersizi yap(20dk)"],["Bonsmensing yap(6dk)"]]],["Esneme yap"],["Yarın yapılacakları belirle"],["Kişisel bakım Rutini yap",[["Diş fırçala"],["Dili Temizle"],["Yüzü sabunla"]]],["Uykudan önce gül suyu kullan"],["Ağzı bantla +Burun bandı"],["00:00 önce uyu"]]]];
  (function a(l,p){l.forEach(([t,c])=>{const id=uid();S.nodes.push({id,p,tm:1,from:f,names:[[f,t]]});if(c)a(c,id)})})(D,null);save()}
@@ -111,7 +116,7 @@ function render(){if(mode==='rp')return rpR();if(mode==='rm')return rmR();zb('')
   let c='<div class="chips">';for(let i=0;i<3;i++){const d=addD(T,i);c+=`<div class="chip ${d===sel?'on':''}" data-d="${d}"><b>${['Bugün','Yarın','Öbür gün'][i]}</b><small>${fmt(d,{day:'numeric',month:'short'})} · %${stat(d).p}</small></div>`}
   ap.innerHTML=c+`</div><div class="pg"><span>${fmt(sel,{weekday:'long'})}</span><div class="bar"><i style="width:${s.p}%"></i></div><span>${s.d}/${s.t} · %${s.p}</span></div>`;
   $('#dt').value=sel}
- else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: açıklama + medya + taşıma (v14)</div>`;$('#dt').value=eff}
+ else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v15)</div>`;$('#dt').value=eff}
  $('#tD').classList.toggle('on',m==='day');$('#tR').classList.toggle('on',m==='rt');save()}
 // pan / zoom
 const map=$('#map'),P=new Map();let pd=0;
@@ -145,12 +150,12 @@ function ren(n){const D=mode==='rt'?eff:sel;ask('Yeniden adlandır',txt(n,D,mode
  if(mode==='day'){n.tm?S.ren[key(sel,n.id)]=t:n.t=t}
  else{n.names=n.names.filter(x=>x[0]!==eff);n.names.push([eff,t]);n.names.sort((a,b)=>a[0]<b[0]?-1:1)}render()})}
 const desc=id=>[id,...S.nodes.filter(n=>n.p===id).flatMap(n=>desc(n.id))];
-function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){rr.on=0;closeN(rr.id);ntCancel(rr)}}if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
+function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){if(rr.days&&rr.days.length){(rr.sk=rr.sk||[]).push(n.day);ntCancel(rr,n.day)}else{rr.on=0;closeN(rr.id);ntCancel(rr)}}}if(mode==='day'){if(n.tm){S.hide[key(sel,n.id)]=1}else{const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id)||x.tm)}}
  else{if(n.from>=eff){const ids=desc(n.id);S.nodes=S.nodes.filter(x=>!ids.includes(x.id))}else n.to=eff}render()}
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
 function menu(n){const D=mode==='rt'?eff:sel,tm=n.tm&&mode==='day';
- modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],['📎 Medya',()=>mgr(n)],
+ modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],['⏰ Tekrarlayan alarm',()=>iaMgr(n)],['📎 Medya',()=>mgr(n)],
  [mode==='rt'?'Rutinden kaldır ('+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası)':tm?'Sadece bu gün için gizle':'Sil',()=>del(n),'dng'],['Kapat']])}
 $('#g').onclick=e=>{if(mv>6)return;const t=e.target.closest('[data-a]');if(!t)return;const id=t.dataset.id,a=t.dataset.a;
  if(a==='chk')stMenu(id)
@@ -165,7 +170,7 @@ const shM=(D,n)=>{const d=new Date(D+'T12:00');d.setDate(1);d.setMonth(d.getMont
 function agg(ds){const m={};past(ds).forEach(D=>rep(D).it.forEach(i=>{const nd=S.nodes.find(n=>n.id===i.id);if(!nd||!nd.tm)return;const o=m[i.id]||(m[i.id]={n:i.n,g:i.g,r:0,y:0});if(i.s==3)o.r++;if(i.s==2)o.y++}));return m}
 function closeDays(){const t=today(),a=S.nodes.reduce((m,n)=>n.from&&n.from<m?n.from:m,t);for(let d=a;d<t;d=addD(d,1))if(!S.rep[d])S.rep[d]=stat(d);save()}
 function stMenu(id){const n=get(id);modal(txt(n,sel,'day'),null,[['🟢 Tamamlandı (yeşil tik)',()=>setS(id,1)],['⚪ Yarım yapıldı (gri tik)',()=>setS(id,2)],['🔴 Yapılmadı (kırmızı çarpı)',()=>setS(id,3)],['Boş bırak',()=>setS(id,0)],['Kapat']])}
-function setS(id,v){const nd=get(id);if(v&&nd&&nd.rem){closeN(nd.rem);ntCancel({id:nd.rem})}const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
+function setS(id,v){const nd=get(id);if(v&&nd&&nd.rem){closeN(nd.rem);ntCancel({id:nd.rem},nd.day)}const k=key(sel,id);v?S.done[k]=v:delete S.done[k];if(sel<today())S.rep[sel]=stat(sel);render()}
 const bar=s=>{const T=s.t||1;return `<div class='sb'><i style='width:${s.g/T*100}%;background:#22c55e'></i><i style='width:${s.y/T*100}%;background:#9ca3af'></i><i style='width:${s.r/T*100}%;background:#ef4444'></i></div>`};
 function secs(s,st,c){const a=s.it.filter(i=>i.s==st);if(!a.length)return '';const g={};a.forEach(i=>(g[i.g||'Genel']=g[i.g||'Genel']||[]).push(i));
  return `<h4 class='c${st}'>${st==3?'Yapılmayan':'Yarım yapılan'} görevler (${a.length})</h4>`+Object.entries(g).map(([k,v])=>`<div class='gh'>${esc(k)}</div>`+v.map(i=>{const q=c&&c[i.id],n=q?(st==3?q.r+' gün yapılmadı':q.y+' gün yarım yapıldı'):'';return `<div class='it'>${esc(i.n)}${n?` <small>(bu hafta ${n})</small>`:''}</div>`}).join('')).join('')}
@@ -213,45 +218,45 @@ function rx(n){if(mode!=='rt'||n.p!==null)return[];const r=recAt(n,eff),x=[];
 function zb(v){['#zo','#zf','#zi'].forEach(q=>$(q).style.display=v)}
 function rfSave(){try{localStorage.setItem('mmplan_rf',JSON.stringify(RF))}catch(e){}}
 const ea=s=>esc(s).replace(/"/g,'&quot;');
-function ensureRem(D){(S.rem||[]).forEach(r=>{if(r.date!==D)return;const n=S.nodes.find(x=>x.rem===r.id);if(r.on&&!n)S.nodes.push({id:uid(),p:null,day:D,t:r.title,rem:r.id,rt:r.time});else if(!r.on&&n&&!S.done[key(D,n.id)])S.nodes=S.nodes.filter(x=>x!==n)})}
+function ensureRemOld(D){(S.rem||[]).forEach(r=>{if(r.date!==D)return;const n=S.nodes.find(x=>x.rem===r.id);if(r.on&&!n)S.nodes.push({id:uid(),p:null,day:D,t:r.title,rem:r.id,rt:r.time});else if(!r.on&&n&&!S.done[key(D,n.id)])S.nodes=S.nodes.filter(x=>x!==n)})}
 async function regs(){try{return await navigator.serviceWorker.ready}catch(e){return null}}
 async function notify(r){const g=await regs();if(!g||!window.Notification||Notification.permission!=='granted')return;
  g.showNotification('Hatırlatıcı: '+r.title,{body:(r.desc?r.desc+' · ':'')+'Saat '+r.time.replace(':','.'),tag:'rem-'+r.id,renotify:true,requireInteraction:true,vibrate:[300,150,300],icon:'icon-192.png',badge:'icon-192.png',data:{url:'./?rem='+r.id}})}
 async function closeN(id){const g=await regs();if(!g)return;(await g.getNotifications({tag:'rem-'+id})).forEach(x=>x.close())}
-async function chk(){ntSync();const now=new Date(),T=today();for(const r of S.rem||[]){if(!r.on||r.date!==T||now<new Date(r.date+'T'+r.time))continue;
+async function chkOld(){ntSync();const now=new Date(),T=today();for(const r of S.rem||[]){if(!r.on||r.date!==T||now<new Date(r.date+'T'+r.time))continue;
  ensureRem(T);const n=S.nodes.find(x=>x.rem===r.id);if(!n)continue;
  if(S.done[key(T,n.id)]){closeN(r.id);continue}
  if(NT())continue;const f=RF[r.id]||(RF[r.id]={n:0,t:0}),g=await regs(),a=g?(await g.getNotifications({tag:'rem-'+r.id})).length:0;
  if(!f.n||(!a&&f.n<4&&Date.now()-f.t>=1800000)){await notify(r);f.n++;f.t=Date.now();rfSave()}}}
 const cal=r=>{const e=new Date(r.date+'T'+r.time),p=x=>String(x).padStart(2,'0'),a=r.date.replace(/-/g,'')+'T'+r.time.replace(':','')+'00';e.setMinutes(e.getMinutes()+15);
  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(r.title)+'&details='+encodeURIComponent(r.desc||'')+'&dates='+a+'/'+iso(e).replace(/-/g,'')+'T'+p(e.getHours())+p(e.getMinutes())+'00'};
-function remSave(r,x){if(r){Object.assign(r,x);const n=S.nodes.find(y=>y.rem===r.id);if(n){n.t=x.title;n.rt=x.time;n.day=x.date}delete RF[r.id]}else S.rem.push({id:uid(),on:1,...x});rmR();save();(async()=>{if(r)await ntCancel(r);ntSync()})()}
-function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.time:'09:00',desc:r?r.desc:''};
- modal(r?'Hatırlatıcıyı düzenle':'Yeni hatırlatıcı',null,[['Kaydet',()=>{const x={title:$('#r1').value.trim(),date:$('#r2').value,time:$('#r3').value,desc:$('#r4').value.trim()};
+function remSave(r,x){if(r){Object.assign(r,x);S.nodes.filter(y=>y.rem===r.id).forEach(n=>{n.t=x.title;n.rt=x.time;if(!(x.days&&x.days.length))n.day=x.date});delete RF[r.id]}else S.rem.push({id:uid(),on:1,...x});rmR();save();(async()=>{if(r)await ntCancel(r);ntSync()})()}
+function remForm(r,v){v=v||{title:r?r.title:'',date:r?r.date:today(),time:r?r.time:'09:00',desc:r?r.desc:'',days:r?r.days||[]:[]};
+ modal(r?'Hatırlatıcıyı düzenle':'Yeni hatırlatıcı',null,[['Kaydet',()=>{const x={title:$('#r1').value.trim(),date:$('#r2').value,time:$('#r3').value,desc:$('#r4').value.trim(),days:[...document.querySelectorAll('#rk .on')].map(e=>+e.dataset.v)};
   if(!x.title||!x.date||!x.time)return remForm(r,x);const go=()=>remSave(r,x);
-  if(new Date(x.date+'T'+x.time)<new Date())modal('Seçtiğin zaman geçmişte. Bildirim gönderilmez ama görev o günün listesine eklenir.',null,[['Yine de kaydet',go],['Düzelt',()=>remForm(r,x)]]);else go()},'pri'],['İptal']]);
- $('#mb').insertAdjacentHTML('afterbegin',`<input id="r1" placeholder="Ne hatırlatılsın?" value="${ea(v.title)}"><input id="r2" type="date" value="${v.date}"><input id="r3" type="time" value="${v.time}"><input id="r4" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}">`)}
+  if(!x.days.length&&new Date(x.date+'T'+x.time)<new Date())modal('Seçtiğin zaman geçmişte. Bildirim gönderilmez ama görev o günün listesine eklenir.',null,[['Yine de kaydet',go],['Düzelt',()=>remForm(r,x)]]);else go()},'pri'],['İptal']]);
+ $('#mb').insertAdjacentHTML('afterbegin',`<input id="r1" placeholder="Ne hatırlatılsın?" value="${ea(v.title)}"><input id="r2" type="date" value="${v.date}"><input id="r3" type="time" value="${v.time}"><input id="r4" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}"><div class="note">Tekrar günleri (hiçbiri seçili değilse tek seferlik):</div><div class="pk" id="rk">${WD.map((w,i)=>`<b data-v="${i+1}" class="${(v.days||[]).includes(i+1)?'on':''}">${w}</b>`).join('')}</div>`);$('#rk').onclick=e=>{const b=e.target.closest('b');b&&b.classList.toggle('on')}}
 function rmR(){$('#map').hidden=true;const el=$('#rp');el.hidden=false;zb('none');$('#nav').style.display='none';$('#sub').innerHTML='';['tD','tR','tP'].forEach(i=>$('#'+i).classList.remove('on'));$('#tM').classList.add('on');
  const np=window.Notification?Notification.permission:'x';
  let h=`<button class='tab on' style='width:100%;margin-top:8px' data-ra='new'>＋ Yeni hatırlatıcı</button><button class='tab' style='width:100%;margin-top:6px' data-ra='set'>⚙ Bildirim ayarları ${RS?'▴':'▾'}</button>`;let g=`<div class='note'>`+(np=='granted'?'Bildirim izni açık.':np=='denied'?'Bildirim izni kapalı: hatırlatıcılar kaydedilir ama bildirim gelmez. Chrome’un site ayarlarından izni açabilirsin.':np=='default'?`<button class='tab' data-ra='perm'>Bildirimleri aç</button>`:'Bu tarayıcı bildirimleri desteklemiyor.')+`<br>Bildirim; uygulama açıkken ya da arka planda canlıyken çalar. Uygulama kapalıyken bildirimler ntfy üzerinden gelir. Sessiz mod, Rahatsız Etmeyin ve pil tasarrufu bildirimleri geciktirebilir.</div>`;
- h+=(RS||!NT()||np!='granted')?g+ntBox():'';h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='med' data-id='${r.id}'>📎${(r.media||[]).length||''}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
+ h+=(RS||!NT()||np!='granted')?g+ntBox():'';h+=[...S.rem].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1).map(r=>`<div class='it' style='border-bottom:1px solid var(--bd);padding:10px 2px;${r.on?'':'opacity:.55'}'><b>${esc(r.title)}</b> <small>${fmt(r.date,{day:'numeric',month:'long',weekday:'short'})} · ${r.time.replace(':','.')}${r.days&&r.days.length?' · her '+r.days.map(d=>WD[d-1]).join(', '):''}${r.on?'':' · kapalı'}</small>${r.desc?`<div class='note'>${esc(r.desc)}</div>`:''}<div class='row' style='margin-top:6px;flex-wrap:wrap'><button class='ib' style='padding:0 10px' data-ra='tog' data-id='${r.id}'>${r.on?'Kapat':'Aç'}</button><button class='ib' style='padding:0 10px' data-ra='ia' data-id='${r.id}'>⏰${(S.ia||[]).filter(i=>i.nid==='rem:'+r.id).length||''}</button><button class='ib' style='padding:0 10px' data-ra='med' data-id='${r.id}'>📎${(r.media||[]).length||''}</button><button class='ib' style='padding:0 10px' data-ra='ed' data-id='${r.id}'>Düzenle</button><button class='ib' style='padding:0 10px' data-ra='del' data-id='${r.id}'>Sil</button></div></div>`).join('')||`<div class='note'>Henüz hatırlatıcı yok.</div>`;
  el.innerHTML=h;save()}
 $('#tM').onclick=()=>{mode='rm';rmR()};
 $('#rp').addEventListener('click',e=>{if(mode!=='rm')return;const t=e.target.closest('[data-ra]');if(!t)return;const a=t.dataset.ra,r=S.rem.find(x=>x.id===t.dataset.id);
- if(a=='new')remForm(null);else if(a in NTA)NTA[a]();else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='med')mgr({rem:r.id,t:r.title,p:null});else if(a=='ed')remForm(r);
+ if(a=='new')remForm(null);else if(a in NTA)NTA[a]();else if(a=='perm')Notification.requestPermission().then(rmR);else if(a=='ia')iaMgr({rem:r.id,t:r.title,p:null});else if(a=='med')mgr({rem:r.id,t:r.title,p:null});else if(a=='ed')remForm(r);
  else if(a=='tog'){r.on=r.on?0:1;if(!r.on){closeN(r.id);ntCancel(r)}else ntSync();rmR();save()}
- else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{ntCancel(r);S.rem=S.rem.filter(x=>x!==r);const n=S.nodes.find(x=>x.rem===r.id);if(n&&!S.done[key(n.day,n.id)])S.nodes=S.nodes.filter(x=>x!==n);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
+ else if(a=='del')modal('Silinsin mi? '+r.title,null,[['Sil',()=>{ntCancel(r);S.rem=S.rem.filter(x=>x!==r);S.nodes=S.nodes.filter(x=>x.rem!==r.id||S.done[key(x.day,x.id)]);closeN(r.id);rmR();save()},'dng'],['Vazgeç']])});
 // --- ntfy: uygulama kapalıyken telefon bildirimi ---
 function NT(){try{return localStorage.getItem('mmplan_nt')||''}catch(e){return ''}}
 function offs(){return[0,10,25,45]}
-async function ntSync(){const tp=NT();if(!tp)return;const now=Date.now();
+async function ntSyncOld(){const tp=NT();if(!tp)return;const now=Date.now();
  for(const k of Object.keys(RF))if(k[0]==='x')ntCancel({id:k.slice(1)});
  for(const r of S.rem||[]){const t0=new Date(r.date+'T'+r.time).getTime(),n=S.nodes.find(x=>x.rem===r.id),dn=n&&S.done[key(r.date,n.id)];
   if(!r.on||dn){if(RF['n'+r.id])await ntCancel(r);continue}
   for(const[k,o]of offs().entries()){const at=t0+o*60000,id=r.id+'-'+k;if(at<=now+15000||at-now>2.9*864e5||RF['n'+id]===at)continue;
    try{const res=await fetch('https://ntfy.sh/'+tp+'/'+id,{method:'POST',body:'Hatırlatıcı: '+r.title+' ('+r.time.replace(':','.')+')'+(r.desc?'\n'+r.desc:''),headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock',At:String(Math.floor(at/1e3)),Click:location.origin+location.pathname+'?rem='+r.id}});
     if(res.ok){RF['n'+id]=at;RF['n'+r.id]=1;rfSave()}}catch(e){}}}}
-async function ntCancel(r){const tp=NT();if(!tp)return;let bad=0;
+async function ntCancelOld(r){const tp=NT();if(!tp)return;let bad=0;
  for(let k=0;k<offs().length;k++){const id=r.id+'-'+k;delete RF['n'+id];try{const res=await fetch('https://ntfy.sh/'+tp+'/'+id,{method:'DELETE'});if(!res.ok)bad=1}catch(e){bad=1}}
  delete RF['n'+r.id];if(bad)RF['x'+r.id]=1;else delete RF['x'+r.id];rfSave()}
 function ntBox(){const tp=NT();if(!tp)return `<button class='tab' style='width:100%;margin-top:8px' data-ra='ntset'>📲 Uygulama kapalıyken de bildirim al (ücretsiz kurulum)</button>`;
@@ -328,7 +333,7 @@ function rs(){const i=document.createElement('input');i.type='file';i.accept='.p
    modal.lock=1;modal('Yükleniyor…',null,[]);let bad=0;
    for(let k=0;k<md.length;k++){const m=md[k];$('#mt').textContent='Medya yükleniyor '+(k+1)+'/'+md.length;
     try{await mPut({id:m.id,blob:f.slice(o0+m.off,o0+m.off+m.len,m.type),name:m.name,type:m.type,size:m.size,dur:m.dur,ts:m.ts})}catch(e){bad++}}
-   S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};S.dd=S.dd||{};
+   S=d;S.hide=S.hide||{};S.ren=S.ren||{};S.rep=S.rep||{};S.rem=S.rem||[];S.dm=S.dm||{};S.dd=S.dd||{};S.ia=S.ia||[];
    if(col){COL=col;colSave()}if(nt){try{localStorage.setItem('mmplan_nt',nt)}catch(e){}}
    save();closeDays();mode='day';sel=today();render();fit();modal.lock=0;
    modal(bad?'Veriler geri yüklendi ama '+bad+' medya dosyası yüklenemedi (depolama dolu olabilir).':'Her şey geri yüklendi.'+(nt?' Hatırlatıcı bildirimleri için yeni telefonda ntfy’de aynı konuya abone ol: '+nt:''),null,[['Tamam']])},'dng'],['Vazgeç']])};
@@ -354,4 +359,74 @@ function descEd(n,keep){const m=mode,D=m==='rt'?eff:sel,orig=dsc(n,D,m),cur=keep
  modal.lock=1;modal('📝 '+txt(n,D,m),null,b);
  $('#mb').insertAdjacentHTML('afterbegin',`<div class="note">${src}</div><textarea id="dx" placeholder="Açıklama yaz…">${esc(cur)}</textarea>`);
  const t=$('#dx');t.oninput=()=>{t.style.height='auto';t.style.height=Math.min(t.scrollHeight,window.innerHeight*.5)+'px'};t.oninput();setTimeout(()=>t.focus(),50)}
+// --- alarmlar (tekrarlayan hatırlatıcı + aralıklı alarm) ---
+function sq(k){return k.replace(/:/g,'-')}
+function ms(D,t){return new Date(D+'T'+t).getTime()}
+function ivl(m){return m%60==0?(m/60)+' saat':m+' dakika'}
+function occD(r,D){return r.days&&r.days.length?(D>=r.date&&r.days.includes(dow(D))&&!(r.sk||[]).includes(D)):r.date===D}
+function ensureRem(D){(S.rem||[]).forEach(r=>{if(!occD(r,D))return;const n=S.nodes.find(x=>x.rem===r.id&&x.day===D);if(r.on&&!n)S.nodes.push({id:uid(),p:null,day:D,t:r.title,rem:r.id,rt:r.time});else if(!r.on&&n&&!S.done[key(D,n.id)])S.nodes=S.nodes.filter(x=>x!==n)})}
+function remOcc(r,a,b){const o=[];if(!r.on)return o;
+ if(!(r.days&&r.days.length)){const t=ms(r.date,r.time);if(t>=a&&t<=b)o.push(t);return o}
+ for(let D=iso(new Date(a-864e5));D<=iso(new Date(b+864e5));D=addD(D,1))if(occD(r,D)){const t=ms(D,r.time);if(t>=a&&t<=b)o.push(t)}return o}
+function iaOcc(i,a,b){const o=[];if(!i.on)return o;const st=ms(i.date,i.time),step=i.every*6e4,en=i.end?ms(i.end,'23:59'):Infinity;
+ for(let t=st+Math.max(0,Math.ceil((a-st)/step))*step;t<=Math.min(b,en)&&o.length<500;t+=step)o.push(t);return o}
+// uygulama içi alarm
+function alSave(){try{localStorage.setItem('mmplan_al',JSON.stringify(AL))}catch(e){}}
+function alUnlock(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+document.addEventListener('pointerdown',alUnlock);document.addEventListener('keydown',alUnlock);
+function alSound(on){clearInterval(sv);clearInterval(vv);try{navigator.vibrate&&navigator.vibrate(0)}catch(e){}if(!on)return;
+ const beep=()=>{if(!ac)return;try{ac.resume();const t=ac.currentTime;for(let k=0;k<3;k++){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=k%2?1046:880;g.gain.setValueAtTime(.35,t+k*.22);g.gain.setValueAtTime(0,t+k*.22+.16);o.connect(g);g.connect(ac.destination);o.start(t+k*.22);o.stop(t+k*.22+.18)}}catch(e){}};
+ beep();sv=setInterval(beep,1100);try{if(navigator.vibrate){navigator.vibrate([500,250,500]);vv=setInterval(()=>navigator.vibrate([500,250,500]),1500)}}catch(e){}
+ setTimeout(()=>{const e=$('#aS');if(e&&(!ac||ac.state!=='running'))e.textContent='Ses için ekrana dokun'},400)}
+function alShow(a){ring=a;const v=$('#al');v.hidden=false;
+ v.innerHTML=`<div class='aT'>⏰ ${esc(a.title)}</div><div class='aD'>${esc((a.desc||'').slice(0,200))}</div><div class='aB'>${a.opts.map(m=>`<button data-sn='${m}'>${m} dk ertele</button>`).join('')}<button data-sn='0' class='k'>Kapat</button></div><div id='aS'></div>`;
+ alSound(1);try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>{a.wl=w}).catch(()=>{})}catch(e){}
+ ntDel(a.base?'z-'+sq(a.base):sq(a.key))}
+function alEnd(m){const a=ring;if(!a)return;alSound(0);try{a.wl&&a.wl.release()}catch(e){}
+ if(m){const b=a.base||a.key;AL.sn[b]={until:Date.now()+m*6e4,title:a.title,desc:a.desc,opts:a.opts,kind:a.kind};ntSnooze(a,m)}
+ $('#al').hidden=true;ring=null;alSave();if(q.length)alShow(q.shift())}
+$('#al').onclick=e=>{const b=e.target.closest('[data-sn]');if(b)alEnd(+b.dataset.sn)};
+function alTick(){const now=Date.now(),a=now-6e5;
+ const add=(k,title,desc,opts,kind)=>{if(AL.fired[k])return;AL.fired[k]=now;q.push({key:k,title,desc,opts,kind})};
+ for(const r of S.rem||[])for(const t of remOcc(r,a,now)){const k='r:'+r.id+':'+t,D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);
+  if(n&&S.done[key(D,n.id)]){AL.fired[k]=AL.fired[k]||now;continue}add(k,r.title,r.desc,[10,20],'r')}
+ for(const i of S.ia||[])for(const t of iaOcc(i,a,now))add('i:'+i.id+':'+t,i.title,i.desc,[10],'i');
+ for(const k of Object.keys(AL.sn)){const s=AL.sn[k];
+  if(s.kind==='r'){const[,id,tt]=k.split(':'),D=iso(new Date(+tt)),n=S.nodes.find(x=>x.rem===id&&x.day===D);if(n&&S.done[key(D,n.id)]){delete AL.sn[k];continue}}
+  if(s.until<=now){delete AL.sn[k];q.push({key:k+':s'+s.until,base:k,title:s.title,desc:s.desc,opts:s.opts,kind:s.kind})}}
+ for(const k of Object.keys(AL.fired))if(now-AL.fired[k]>2*864e5)delete AL.fired[k];
+ alSave();if(!ring&&q.length)alShow(q.shift())}
+setInterval(alTick,4000);
+async function chk(){alTick();ntSync()}
+// ntfy: uygulama kapalıyken
+const tr=s=>s.replace(/[çÇğĞıİöÖşŞüÜ]/g,c=>({'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I','ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U'}[c])).replace(/[^\x20-\x7e]/g,'').replace(/[,;'"]/g,' ');
+function acts(tp,seq,title,opts){const b='https://ntfy.sh/'+tp+'/z-'+seq;
+ return opts.map(m=>`http, ${m} dk ertele, ${b}-${m}, method=POST, headers.Delay=${m}m, headers.Priority=5, headers.Tags=alarm_clock, headers.Title=Plan Hatirlatici, body='Ertelendi: ${tr(title)}', clear=true`).concat(`http, Kapat, https://ntfy.sh/${tp}/${seq}, method=DELETE, clear=true`).join('; ')}
+async function ntDel(seq){const tp=NT();if(!tp)return;try{const r=await fetch('https://ntfy.sh/'+tp+'/'+seq,{method:'DELETE'});if(r.ok){delete RF['n'+seq];delete RF['x'+seq]}else RF['x'+seq]=1}catch(e){RF['x'+seq]=1}rfSave()}
+async function ntCancel(r,D){const pre=(r.k||'r')+'-'+r.id+'-';for(const k of Object.keys(RF)){if(k[0]!=='n'||!k.slice(1).startsWith(pre))continue;const t=+k.slice(1).split('-').pop();if(D&&iso(new Date(t))!==D)continue;await ntDel(k.slice(1))}}
+async function ntSnooze(a,m){const tp=NT();if(!tp)return;const b=a.base||a.key,u=Date.now()+m*6e4,seq='z-'+sq(b);
+ try{const res=await fetch('https://ntfy.sh/'+tp+'/'+seq,{method:'POST',body:'⏰ (ertelendi) '+a.title,headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock',At:String(Math.floor(u/1e3)),Click:location.origin+location.pathname}});if(res.ok){RF['n'+seq]=u;rfSave()}}catch(e){}}
+async function ntSync(){const tp=NT();if(!tp)return;const now=Date.now(),jobs=[];
+ for(const k of Object.keys(RF))if(k[0]==='x')ntDel(k.slice(1));
+ for(const r of S.rem||[])for(const t of remOcc(r,now+15000,now+2.9*864e5)){const D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);if(n&&S.done[key(D,n.id)])continue;jobs.push({seq:'r-'+r.id+'-'+t,t,title:r.title,desc:r.desc,opts:[10,20]})}
+ for(const i of S.ia||[])for(const t of iaOcc(i,now+15000,now+864e5).slice(0,24))jobs.push({seq:'i-'+i.id+'-'+t,t,title:i.title,desc:i.desc,opts:[10]});
+ for(const j of jobs){if(RF['n'+j.seq]===j.t)continue;
+  try{const res=await fetch('https://ntfy.sh/'+tp+'/'+j.seq,{method:'POST',body:'⏰ '+j.title+(j.desc?'\n'+j.desc.slice(0,200):''),headers:{Title:'Plan Hatirlatici',Priority:'5',Tags:'alarm_clock',At:String(Math.floor(j.t/1e3)),Click:location.origin+location.pathname,Actions:acts(tp,j.seq,j.title,j.opts)}});
+   if(res.ok){RF['n'+j.seq]=j.t;rfSave()}else if(res.status==429)break}catch(e){break}}
+ for(const k of Object.keys(RF))if(k[0]==='n'&&typeof RF[k]==='number'&&RF[k]<now-864e5)delete RF[k]}
+// aralıklı alarm yönetimi
+function persist(){try{localStorage.setItem(K,JSON.stringify(S));return true}catch(e){return false}}
+function iaMgr(n){const nid=n.rem?'rem:'+n.rem:n.id,L=(S.ia||[]).filter(i=>i.nid===nid),D=mode==='rt'?eff:sel;MC2=n;
+ modal('⏰ Tekrarlayan alarm — '+txt(n,D,mode),null,[['＋ Yeni tekrarlayan alarm',()=>iaForm(n,null),'pri'],['Kapat',()=>render()]]);
+ $('#mb').insertAdjacentHTML('afterbegin',L.length?L.map(i=>`<div class='mi'><span>${esc(i.title)}<br><small>her ${ivl(i.every)} · ${i.date} ${i.time}’dan${i.end?' · bitiş '+i.end:''}${i.on?'':' · duraklatıldı'}</small></span><b data-ia='tog' data-id='${i.id}'>${i.on?'Duraklat':'Başlat'}</b><b data-ia='ed' data-id='${i.id}'>Düzenle</b><b data-ia='del' data-id='${i.id}'>Sil</b></div>`).join(''):`<div class='note'>Bu görev için tekrarlayan alarm yok.</div>`)}
+function iaForm(n,i){const D=mode==='rt'?eff:sel,v=i||{title:txt(n,D,mode),desc:'',every:60,date:today(),time:new Date().toTimeString().slice(0,5),end:''},nid=n.rem?'rem:'+n.rem:n.id,op=[10,20,30,60,120,300,600];
+ modal(i?'Alarmı düzenle':'Yeni tekrarlayan alarm',null,[['Kaydet',()=>{const x={title:$('#i1').value.trim(),desc:$('#i2').value.trim(),every:Math.round(+$('#i6').value||+$('#i3').value),date:$('#i4').value,time:$('#i5').value,end:$('#i7').value};
+  if(!x.title||!x.date||!x.time||!(x.every>=5)||(x.end&&x.end<x.date))return modal('Eksik ya da hatalı bilgi: ad, tarih, saat gerekli, aralık en az 5 dakika olmalı, bitiş tarihi başlangıçtan önce olamaz.',null,[['Düzenle',()=>iaForm(n,i)]]);
+  S.ia=S.ia||[];const snap=JSON.stringify(S.ia);if(i){ntCancel({id:i.id,k:'i'});Object.assign(i,x)}else S.ia.push({id:uid(),nid,on:1,...x});
+  if(!persist()){S.ia=JSON.parse(snap);return modal('Alarm kaydedilemedi (depolama dolu olabilir).',null,[['Tamam']])}
+  ntSync();iaMgr(n)},'pri'],['İptal',()=>iaMgr(n)]]);
+ $('#mb').insertAdjacentHTML('afterbegin',`<input id="i1" placeholder="Alarm adı" value="${ea(v.title)}"><input id="i2" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}"><div class="note">Tekrar aralığı</div><select id="i3">${op.map(m=>`<option value="${m}"${m==v.every?' selected':''}>${ivl(m)}</option>`).join('')}</select><input id="i6" type="number" min="5" placeholder="Özel aralık (dakika, istersen)" value="${op.includes(v.every)?'':v.every}"><div class="note">Başlangıç tarihi ve saati</div><input id="i4" type="date" value="${v.date}"><input id="i5" type="time" value="${v.time}"><div class="note">Bitiş tarihi (isteğe bağlı)</div><input id="i7" type="date" value="${v.end||''}">`)}
+$('#mb').addEventListener('click',e=>{const t=e.target.closest('[data-ia]');if(!t||!MC2)return;const i=S.ia.find(x=>x.id===t.dataset.id),a=t.dataset.ia;
+ if(a=='tog'){i.on=i.on?0:1;if(!i.on)ntCancel({id:i.id,k:'i'});save();ntSync();iaMgr(MC2)}else if(a=='ed')iaForm(MC2,i);
+ else if(a=='del')modal('Tekrarlayan alarm silinsin mi? (Görev silinmez)',null,[['Sil',()=>{ntCancel({id:i.id,k:'i'});S.ia=S.ia.filter(x=>x!==i);save();iaMgr(MC2)},'dng'],['Vazgeç',()=>iaMgr(MC2)]])});
 </script></body></html>
