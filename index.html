@@ -72,7 +72,7 @@ const addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return 
 const fmt=(s,o)=>new Date(s+'T12:00').toLocaleDateString('tr-TR',o);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-let ring=null,q=[],ac=null,sv=0,vv=0,MC2=null,nsLast='',TN=null;
+let ring=null,q=[],ac=null,sv=0,vv=0,MC2=null,nsLast='',TN=null,TM='a';
 let AL={fired:{},sn:{}};try{AL=JSON.parse(localStorage.getItem('mmplan_al'))||AL}catch(e){}
 let RF={};try{RF=JSON.parse(localStorage.getItem('mmplan_rf'))||{}}catch(e){}
 let COL={};try{COL=JSON.parse(localStorage.getItem('mmplan_col'))||{}}catch(e){}
@@ -368,7 +368,9 @@ function remOcc(r,a,b){const o=[];if(!r.on)return o;
  if(!(r.days&&r.days.length)){const t=ms(r.date,r.time);if(t>=a&&t<=b)o.push(t);return o}
  for(let D=iso(new Date(a-864e5));D<=iso(new Date(b+864e5));D=addD(D,1))if(occD(r,D)){const t=ms(D,r.time);if(t>=a&&t<=b)o.push(t)}return o}
 function iaOcc(i,a,b){const o=[];if(!i.on)return o;const st=ms(i.date,i.time),step=i.every*6e4,en=i.end?ms(i.end,'23:59'):Infinity;
- for(let t=st+Math.max(0,Math.ceil((a-st)/step))*step;t<=Math.min(b,en)&&o.length<500;t+=step)o.push(t);return o}
+ for(let t=st+Math.max(0,Math.ceil((a-st)/step))*step;t<=Math.min(b,en)&&o.length<500;t+=step)if(!(i.q&&i.q.on&&inQuiet(t,i.q)))o.push(t);return o}
+function hmin(s){const p=s.split(':');return +p[0]*60+ +p[1]}
+function inQuiet(t,q){const d=new Date(t),m=d.getHours()*60+d.getMinutes(),f=hmin(q.from),e=hmin(q.to);return f<e?(m>=f&&m<e):f>e?(m>=f||m<e):false}
 // uygulama içi alarm
 function alSave(){try{localStorage.setItem('mmplan_al',JSON.stringify(AL))}catch(e){}}
 function alUnlock(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
@@ -382,17 +384,17 @@ function alShow(a){ring=a;const v=$('#al');v.hidden=false;
  alSound(1);try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>{a.wl=w}).catch(()=>{})}catch(e){}
  ntDel(a.base?'z-'+sq(a.base):sq(a.key))}
 function alEnd(m){const a=ring;if(!a)return;alSound(0);try{a.wl&&a.wl.release()}catch(e){}
- if(m){const b=a.base||a.key;AL.sn[b]={until:Date.now()+m*6e4,title:a.title,desc:a.desc,opts:a.opts,kind:a.kind};ntSnooze(a,m)}
+ if(m&&!(a.qh&&a.qh.on&&inQuiet(Date.now()+m*6e4,a.qh))){const b=a.base||a.key;AL.sn[b]={until:Date.now()+m*6e4,title:a.title,desc:a.desc,opts:a.opts,kind:a.kind,qh:a.qh};ntSnooze(a,m)}
  $('#al').hidden=true;ring=null;alSave();if(q.length)alShow(q.shift())}
 $('#al').onclick=e=>{const b=e.target.closest('[data-sn]');if(b)alEnd(+b.dataset.sn)};
 function alTick(){if(window.AndroidBridge)return;const now=Date.now(),a=now-6e5;
- const add=(k,title,desc,opts,kind)=>{if(AL.fired[k])return;AL.fired[k]=now;q.push({key:k,title,desc,opts,kind})};
+ const add=(k,title,desc,opts,kind,qh)=>{if(AL.fired[k])return;AL.fired[k]=now;q.push({key:k,title,desc,opts,kind,qh})};
  for(const r of S.rem||[])for(const t of remOcc(r,a,now)){const k='r:'+r.id+':'+t,D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);
   if(n&&S.done[key(D,n.id)]){AL.fired[k]=AL.fired[k]||now;continue}add(k,r.title,r.desc,[10,20],'r')}
- for(const i of S.ia||[])for(const t of iaOcc(i,a,now))add('i:'+i.id+':'+t,i.title,i.desc,[10],'i');
+ for(const i of S.ia||[])for(const t of iaOcc(i,a,now))add('i:'+i.id+':'+t,i.title,i.desc,[10],'i',i.q);
  for(const k of Object.keys(AL.sn)){const s=AL.sn[k];
   if(s.kind==='r'){const[,id,tt]=k.split(':'),D=iso(new Date(+tt)),n=S.nodes.find(x=>x.rem===id&&x.day===D);if(n&&S.done[key(D,n.id)]){delete AL.sn[k];continue}}
-  if(s.until<=now){delete AL.sn[k];q.push({key:k+':s'+s.until,base:k,title:s.title,desc:s.desc,opts:s.opts,kind:s.kind})}}
+  if(s.until<=now){delete AL.sn[k];q.push({key:k+':s'+s.until,base:k,title:s.title,desc:s.desc,opts:s.opts,kind:s.kind,qh:s.qh})}}
  for(const k of Object.keys(AL.fired))if(now-AL.fired[k]>2*864e5)delete AL.fired[k];
  alSave();if(!ring&&q.length)alShow(q.shift())}
 setInterval(alTick,4000);
@@ -417,28 +419,35 @@ async function ntSync(){const tp=NT();if(!tp||window.AndroidBridge)return;const 
 function persist(){try{localStorage.setItem(K,JSON.stringify(S));return true}catch(e){return false}}
 function iaMgr(n){const nid=n.rem?'rem:'+n.rem:n.id,L=(S.ia||[]).filter(i=>i.nid===nid),D=mode==='rt'?eff:sel;MC2=n;
  modal('⏰ Tekrarlayan alarm — '+txt(n,D,mode),null,[['＋ Yeni tekrarlayan alarm',()=>iaForm(n,null),'pri'],['Kapat',()=>render()]]);
- $('#mb').insertAdjacentHTML('afterbegin',L.length?L.map(i=>`<div class='mi'><span>${esc(i.title)}<br><small>her ${ivl(i.every)} · ${i.date} ${i.time}’dan${i.end?' · bitiş '+i.end:''}${i.on?'':' · duraklatıldı'}</small></span><b data-ia='tog' data-id='${i.id}'>${i.on?'Duraklat':'Başlat'}</b><b data-ia='ed' data-id='${i.id}'>Düzenle</b><b data-ia='del' data-id='${i.id}'>Sil</b></div>`).join(''):`<div class='note'>Bu görev için tekrarlayan alarm yok.</div>`)}
+ $('#mb').insertAdjacentHTML('afterbegin',L.length?L.map(i=>`<div class='mi'><span>${esc(i.title)}<br><small>her ${ivl(i.every)} · ${i.date} ${i.time}’dan${i.end?' · bitiş '+i.end:''}${i.q&&i.q.on?' · sessiz '+i.q.from+'–'+i.q.to:''}${i.on?'':' · duraklatıldı'}</small></span><b data-ia='tog' data-id='${i.id}'>${i.on?'Duraklat':'Başlat'}</b><b data-ia='ed' data-id='${i.id}'>Düzenle</b><b data-ia='del' data-id='${i.id}'>Sil</b></div>`).join(''):`<div class='note'>Bu görev için tekrarlayan alarm yok.</div>`)}
 function iaForm(n,i){TN=i?i.tone||null:null;const D=mode==='rt'?eff:sel,v=i||{title:txt(n,D,mode),desc:'',every:60,date:today(),time:new Date().toTimeString().slice(0,5),end:''},nid=n.rem?'rem:'+n.rem:n.id,op=[10,20,30,60,120,300,600];
- modal(i?'Alarmı düzenle':'Yeni tekrarlayan alarm',null,[['Kaydet',()=>{const x={title:$('#i1').value.trim(),desc:$('#i2').value.trim(),every:Math.round(+$('#i6').value||+$('#i3').value),date:$('#i4').value,time:$('#i5').value,end:$('#i7').value,tone:TN};
-  if(!x.title||!x.date||!x.time||!(x.every>=5)||(x.end&&x.end<x.date))return modal('Eksik ya da hatalı bilgi: ad, tarih, saat gerekli, aralık en az 5 dakika olmalı, bitiş tarihi başlangıçtan önce olamaz.',null,[['Düzenle',()=>iaForm(n,i)]]);
+ modal(i?'Alarmı düzenle':'Yeni tekrarlayan alarm',null,[['Kaydet',()=>{const x={title:$('#i1').value.trim(),desc:$('#i2').value.trim(),every:Math.round(+$('#i6').value||+$('#i3').value),date:$('#i4').value,time:$('#i5').value,end:$('#i7').value,tone:TN,q:$('#iq0').value==='1'?{on:1,from:$('#iq1').value,to:$('#iq2').value}:null};
+  if(!x.title||!x.date||!x.time||!(x.every>=5)||(x.end&&x.end<x.date)||(x.q&&(!x.q.from||!x.q.to||x.q.from===x.q.to)))return modal('Eksik ya da hatalı bilgi: ad, tarih, saat gerekli, aralık en az 5 dakika olmalı, bitiş tarihi başlangıçtan önce olamaz, sessiz saatlerde başlangıç ve bitiş saati farklı olmalı.',null,[['Düzenle',()=>iaForm(n,i)]]);
   S.ia=S.ia||[];const snap=JSON.stringify(S.ia);if(i){ntCancel({id:i.id,k:'i'});Object.assign(i,x)}else S.ia.push({id:uid(),nid,on:1,...x});
   if(!persist()){S.ia=JSON.parse(snap);return modal('Alarm kaydedilemedi (depolama dolu olabilir).',null,[['Tamam']])}
   ntSync();nativeSync();iaMgr(n)},'pri'],['İptal',()=>iaMgr(n)]]);
- $('#mb').insertAdjacentHTML('afterbegin',`<input id="i1" placeholder="Alarm adı" value="${ea(v.title)}"><input id="i2" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}"><div class="note">Tekrar aralığı</div><select id="i3">${op.map(m=>`<option value="${m}"${m==v.every?' selected':''}>${ivl(m)}</option>`).join('')}</select><input id="i6" type="number" min="5" placeholder="Özel aralık (dakika, istersen)" value="${op.includes(v.every)?'':v.every}"><div class="note">Başlangıç tarihi ve saati</div><input id="i4" type="date" value="${v.date}"><input id="i5" type="time" value="${v.time}"><div class="note">Bitiş tarihi (isteğe bağlı)</div><input id="i7" type="date" value="${v.end||''}">${toneRow()}`)}
+ $('#mb').insertAdjacentHTML('afterbegin',`<input id="i1" placeholder="Alarm adı" value="${ea(v.title)}"><input id="i2" placeholder="Açıklama (isteğe bağlı)" value="${ea(v.desc)}"><div class="note">Tekrar aralığı</div><select id="i3">${op.map(m=>`<option value="${m}"${m==v.every?' selected':''}>${ivl(m)}</option>`).join('')}</select><input id="i6" type="number" min="5" placeholder="Özel aralık (dakika, istersen)" value="${op.includes(v.every)?'':v.every}"><div class="note">Başlangıç tarihi ve saati</div><input id="i4" type="date" value="${v.date}"><input id="i5" type="time" value="${v.time}"><div class="note">Bitiş tarihi (isteğe bağlı)</div><input id="i7" type="date" value="${v.end||''}"><div class="note">Sessiz saatler: bu alarm o saatlerde çalmaz (gece yarısını geçebilir, ör. 23:00–08:00)</div><select id="iq0"><option value="0">Kapalı</option><option value="1"${v.q&&v.q.on?' selected':''}>Açık</option></select><div class="note">Sessiz başlangıç / sessiz bitiş</div><input id="iq1" type="time" value="${(v.q&&v.q.from)||'23:00'}"><input id="iq2" type="time" value="${(v.q&&v.q.to)||'08:00'}">${toneRow()}`)}
 $('#mb').addEventListener('click',e=>{const t=e.target.closest('[data-ia]');if(!t||!MC2)return;const i=S.ia.find(x=>x.id===t.dataset.id),a=t.dataset.ia;
  if(a=='tog'){i.on=i.on?0:1;if(!i.on)ntCancel({id:i.id,k:'i'});save();ntSync();nativeSync();iaMgr(MC2)}else if(a=='ed')iaForm(MC2,i);
  else if(a=='del')modal('Tekrarlayan alarm silinsin mi? (Görev silinmez)',null,[['Sil',()=>{ntCancel({id:i.id,k:'i'});S.ia=S.ia.filter(x=>x!==i);save();nativeSync();iaMgr(MC2)},'dng'],['Vazgeç',()=>iaMgr(MC2)]])});
 // --- Android uygulaması köprüsü ---
 function nativeSync(){if(!window.AndroidBridge)return;const now=Date.now(),L=[];
- for(const r of S.rem||[])for(const t of remOcc(r,now-60000,now+7*864e5)){const D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);if(n&&S.done[key(D,n.id)])continue;L.push({id:'r-'+r.id+'-'+t,t,title:r.title,desc:r.desc||'',opts:[10,20],tone:(r.tone&&r.tone.uri)||''})}
- for(const i of S.ia||[])for(const t of iaOcc(i,now-60000,now+2*864e5).slice(0,60))L.push({id:'i-'+i.id+'-'+t,t,title:i.title,desc:i.desc||'',opts:[10],tone:(i.tone&&i.tone.uri)||''});
- L.sort((a,b)=>a.t-b.t);const j=JSON.stringify(L.slice(0,200));if(j!==nsLast){try{AndroidBridge.setAlarms(j);nsLast=j}catch(e){}}}
+ for(const r of S.rem||[])for(const t of remOcc(r,now-60000,now+7*864e5)){const D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);if(n&&S.done[key(D,n.id)])continue;L.push({id:'r-'+r.id+'-'+t,t,title:r.title,desc:r.desc||'',opts:[10,20],tone:(r.tone&&r.tone.uri)||defTone()})}
+ for(const i of S.ia||[])for(const t of iaOcc(i,now-60000,now+2*864e5).slice(0,60))L.push({id:'i-'+i.id+'-'+t,t,title:i.title,desc:i.desc||'',opts:[10],q:(i.q&&i.q.on?[hmin(i.q.from),hmin(i.q.to)]:null),tone:(i.tone&&i.tone.uri)||defTone()});
+ L.sort((a,b)=>a.t-b.t);const j=JSON.stringify(L.slice(0,200));if(j!==nsLast){try{AndroidBridge.setAlarms(j);nsLast=j}catch(e){}}const kp=[];if(S.cfg&&S.cfg.tone)kp.push(S.cfg.tone.uri);(S.rem||[]).forEach(r=>r.tone&&kp.push(r.tone.uri));(S.ia||[]).forEach(i=>i.tone&&kp.push(i.tone.uri));const kj=JSON.stringify(kp);if(kj!==window._ks){window._ks=kj;try{AndroidBridge.keepTones&&AndroidBridge.keepTones(kj)}catch(e){}}}
 async function saveBlob(b,name){
  if(window.AndroidBridge&&AndroidBridge.beginSave){try{if(!AndroidBridge.beginSave(name))throw 0;const C=786432;
   for(let o=0;o<b.size;o+=C){const u=new Uint8Array(await b.slice(o,o+C).arrayBuffer());let s='';for(let k=0;k<u.length;k+=8192)s+=String.fromCharCode.apply(null,u.subarray(k,k+8192));if(!AndroidBridge.chunk(btoa(s)))throw 0}
   AndroidBridge.endSave();return true}catch(e){try{AndroidBridge.abortSave()}catch(x){}return false}}
  const a=document.createElement('a'),u=URL.createObjectURL(b);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e5);return true}
-function toneRow(){return window.AndroidBridge?`<div class="note">Zil sesi: <b id="tn">${TN?esc(TN.name):'Varsayılan alarm sesi'}</b></div><div class="pk" style="grid-template-columns:1fr 1fr"><b onclick="AndroidBridge.pickTone()">♪ Zil sesi seç</b><b onclick="toneClr()">Varsayılan</b></div>`:'<div class="note">Zil sesi seçimi sadece Android uygulamasında var.</div>'}
-function toneClr(){TN=null;const e=$('#tn');if(e)e.textContent='Varsayılan alarm sesi'}
-window.onTonePicked=j=>{try{TN=JSON.parse(j);const e=document.getElementById('tn');if(e)e.textContent=TN.name}catch(x){}};
+function defTone(){return (S.cfg&&S.cfg.tone&&S.cfg.tone.uri)||''}
+function toneLbl(){return TN?'özel · '+esc(TN.name):'varsayılan · '+esc((S.cfg&&S.cfg.tone&&S.cfg.tone.name)||'telefonun alarm sesi')}
+function toneRow(){if(!window.AndroidBridge)return '<div class="note">Zil sesi seçimi sadece Android uygulamasında var.</div>';
+ return `<div class="note">Zil sesi: <b id="tn">${toneLbl()}</b></div><div class="pk" style="grid-template-columns:1fr 1fr"><b onclick="toneAlarm()">♪ Bu alarma özel ses</b><b onclick="toneClr()">Varsayılan sesi seç</b><b onclick="toneDef()">♪ Varsayılan sesi ayarla</b><b onclick="tonePrev()">▶ Dinle</b></div>`}
+function toneClr(){TN=null;const e=$('#tn');if(e)e.innerHTML=toneLbl()}
+function toneAlarm(){TM='a';AndroidBridge.pickTone()}
+function toneDef(){TM='d';AndroidBridge.pickTone()}
+function tonePrev(){try{AndroidBridge.preview((TN&&TN.uri)||defTone())}catch(e){}}
+window.onTonePicked=j=>{try{const t=JSON.parse(j);if(TM==='d'){S.cfg=S.cfg||{};S.cfg.tone=t;save();nativeSync()}else TN=t;const e=document.getElementById('tn');if(e)e.innerHTML=toneLbl()}catch(x){}};
+window.onToneError=m=>{const e=document.getElementById('tn');if(e)e.innerHTML='<span style="color:#ef4444">'+esc(m)+'</span>'};
 </script></body></html>
