@@ -116,7 +116,7 @@ function render(){if(mode==='rp')return rpR();if(mode==='rm')return rmR();zb('')
   let c='<div class="chips">';for(let i=0;i<3;i++){const d=addD(T,i);c+=`<div class="chip ${d===sel?'on':''}" data-d="${d}"><b>${['Bugün','Yarın','Öbür gün'][i]}</b><small>${fmt(d,{day:'numeric',month:'short'})} · %${stat(d).p}</small></div>`}
   ap.innerHTML=c+`</div><div class="pg"><span>${fmt(sel,{weekday:'long'})}</span><div class="bar"><i style="width:${s.p}%"></i></div><span>${s.d}/${s.t} · %${s.p}</span></div>`;
   $('#dt').value=sel}
- else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v16)</div>`;$('#dt').value=eff}
+ else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v17)</div>`;$('#dt').value=eff}
  $('#tD').classList.toggle('on',m==='day');$('#tR').classList.toggle('on',m==='rt');save()}
 // pan / zoom
 const map=$('#map'),P=new Map();let pd=0;
@@ -155,7 +155,7 @@ function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){if(rr.days
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
 function menu(n){const D=mode==='rt'?eff:sel,tm=n.tm&&mode==='day';
- modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],['⏰ Tekrarlayan alarm',()=>iaMgr(n)],['📎 Medya',()=>mgr(n)],
+ modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],['⏰ Tekrarlayan alarm',()=>iaMgr(n)],['📎 Medya',()=>mgr(n)],...(mode==='day'?[['↪ Görev Aktar',()=>xferMenu(n)]]:[]),
  [mode==='rt'?'Rutinden kaldır ('+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası)':tm?'Sadece bu gün için gizle':'Sil',()=>del(n),'dng'],['Kapat']])}
 $('#g').onclick=e=>{if(mv>6)return;const t=e.target.closest('[data-a]');if(!t)return;const id=t.dataset.id,a=t.dataset.a;
  if(a==='chk')stMenu(id)
@@ -450,4 +450,32 @@ function toneDef(){TM='d';AndroidBridge.pickTone()}
 function tonePrev(){try{AndroidBridge.preview((TN&&TN.uri)||defTone())}catch(e){}}
 window.onTonePicked=j=>{try{const t=JSON.parse(j);if(TM==='d'){S.cfg=S.cfg||{};S.cfg.tone=t;save();nativeSync()}else TN=t;const e=document.getElementById('tn');if(e)e.innerHTML=toneLbl()}catch(x){}};
 window.onToneError=m=>{const e=document.getElementById('tn');if(e)e.innerHTML='<span style="color:#ef4444">'+esc(m)+'</span>'};
+// --- Görev Aktar ---
+function xferMenu(n){modal('↪ Görev Aktar',null,[['Bugüne Aktar',()=>xfer(n,today())],['Yarına Aktar',()=>xfer(n,addD(today(),1))],['Özel Gün Seç',()=>xferPick(n)],['Vazgeç']])}
+function xferPick(n){modal('Hangi güne aktarılsın?',null,[['Onayla',()=>{const v=$('#tg1').value;if(!v)return xferPick(n);xfer(n,v)},'pri'],['Vazgeç',()=>xferMenu(n)]]);
+ $('#mb').insertAdjacentHTML('afterbegin','<input id="tg1" type="date" value="'+addD(today(),1)+'">')}
+async function xfer(n,T,force){const D=sel,fm=d=>fmt(d,{day:'numeric',month:'long'});ensureRem(D);
+ if(T===D)return modal('Bu görev zaten '+fm(T)+' gününün listesinde.',null,[['Tamam']]);
+ const dup=S.nodes.find(x=>x.src&&x.src.id===n.id&&x.day===T);
+ if(dup)return modal('Bu görev '+fm(T)+' gününe zaten aktarılmış, tekrar eklenmedi.',null,[['Aktarılanı aç',()=>{sel=T;mode='day';render();fit()}],['Tamam']]);
+ if(n.tm&&!force&&act(n,T,'day'))return modal('Bu rutin görev '+fm(T)+' gününde zaten kendiliğinden oluşuyor. Yine de ayrı bir kopya eklensin mi?',null,[['Evet, ekle',()=>xfer(n,T,1)],['Vazgeç']]);
+ const nodes=[],rems=[],ias=[],jobs=[],past=T<today();let skipped=0,late=false;
+ const cpm=ids=>ids.map(i=>{const nid='m'+uid()+Date.now().toString(36);jobs.push([i,nid]);return nid});
+ const cia=(a,nid)=>ias.push({...a,id:uid(),nid,date:T,end:a.end&&a.end<T?'':a.end,on:past?0:a.on});
+ const cp=(x,par,root)=>{const id=uid(),nn={id,p:par,day:T,t:x.rem?x.t:txt(x,D,'day')},sr=x.rem?S.rem.find(y=>y.id===x.rem):null;
+  if(sr){const r2={id:uid(),on:1,title:sr.title,date:T,time:sr.time,desc:sr.desc||'',days:[],media:cpm(sr.media||[])};if(sr.tone)r2.tone=sr.tone;rems.push(r2);nn.rem=r2.id;nn.rt=sr.time;nn.t=sr.title;if(ms(T,sr.time)<Date.now())late=true;
+   const li=(S.ia||[]).filter(a=>a.nid==='rem:'+sr.id);if(sr.days&&sr.days.length)skipped+=li.length;else li.forEach(a=>cia(a,'rem:'+r2.id))}
+  else{const d=dsc(x,D,'day');if(d.trim())nn.desc=d;const m=mids(x,D,'day');if(m.length)nn.media=cpm(m);
+   const li=(S.ia||[]).filter(a=>a.nid===x.id);if(x.tm)skipped+=li.length;else li.forEach(a=>cia(a,id))}
+  if(root)nn.src={id:n.id,day:D};nodes.push(nn);
+  S.nodes.filter(c=>c.p===x.id&&act(c,D,'day')).forEach(c=>cp(c,id,false))};
+ cp(n,null,true);
+ const done=[];
+ try{for(const[f,t]of jobs){const r=await mGet(f);if(!r)continue;await mPut({...r,id:t,ts:Date.now()});done.push(t)}}
+ catch(e){for(const t of done)try{await mDel(t)}catch(x){}return modal('Aktarılamadı: medya dosyaları kopyalanamadı (depolama dolu olabilir). Hiçbir şey değiştirilmedi.',null,[['Tamam']])}
+ const snap=JSON.stringify([S.nodes,S.rem,S.ia,S.rep]);
+ S.nodes.push(...nodes);S.rem.push(...rems);S.ia=(S.ia||[]).concat(ias);if(past&&S.rep[T])S.rep[T]=stat(T);
+ if(!persist()){const[a,b,c,d]=JSON.parse(snap);S.nodes=a;S.rem=b;S.ia=c;S.rep=d;for(const t of done)try{await mDel(t)}catch(x){}return modal('Aktarılamadı: kayıt yapılamadı (depolama dolu olabilir). Hiçbir şey değiştirilmedi.',null,[['Tamam']])}
+ render();ntSync();nativeSync();
+ modal('✔ Görev '+fm(T)+' gününe aktarıldı'+(nodes.length>1?' (+'+(nodes.length-1)+' alt görev)':'')+'.'+(jobs.length?' '+jobs.length+' medya kopyalandı.':'')+(skipped?' Rutin ya da haftalık görevin alarmları kopyalanmadı, onlar zaten kendi düzeninde çalışıyor.':'')+(ias.length&&past?' Geçmiş güne aktarıldığı için kopyalanan tekrarlayan alarmlar duraklatıldı.':'')+(late?' Hatırlatıcı saati geçmişte kaldığı için o alarm çalmaz.':''),null,[['Aktarılan günü aç',()=>{sel=T;mode='day';render();fit()}],['Tamam']])}
 </script></body></html>
