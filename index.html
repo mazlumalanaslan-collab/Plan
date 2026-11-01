@@ -93,7 +93,7 @@ const sfx=(n,D,m)=>{if(n.rem&&m!=='rt')return' ('+n.rt.replace(':','.')+')';if(m
 const act=(n,D,m)=>m==='rt'?(n.tm&&lv(n,D)&&(n.p!==null||(recAt(n,D)||{t:'d'}).t===rk)):n.tm?(lv(n,D)&&!gp(n,D)&&recOk(n,D)&&!S.hide[key(D,n.id)]):n.day===D;
 function txt(n,D,m){if(!n.tm)return n.t;if(m==='day'&&S.ren[key(D,n.id)])return S.ren[key(D,n.id)];let r=n.names[0][1];for(const[f,t]of n.names)if(f<=D)r=t;return r}
 const wrap=t=>{const w=t.split(/\s+/),r=[];for(let i=0;i<w.length;i+=4)r.push(w.slice(i,i+4).join(' '));return r};
-function lay(D,m,cv){if(m==='day')ensureRem(D);const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m)+(cv?mk(n,D,m):''),d,k,hk:k.length>0,hd:!!dsc(n,D,m).trim()};if(cv&&COL[n.id])o.k=[];return o});
+function lay(D,m,cv){if(m==='day')ensureRem(D);const walk=(p,d)=>S.nodes.filter(n=>n.p===p&&act(n,D,m)).map(n=>{const k=walk(n.id,d+1),o={n,t:txt(n,D,m)+sfx(n,D,m)+(cv?tmk(n,D,m)+mk(n,D,m):''),d,k,hk:k.length>0,hd:!!dsc(n,D,m).trim()};if(cv&&COL[n.id])o.k=[];return o});
  const root={n:null,t:'Yapılacaklar listesi',d:0,k:walk(null,1)},cw=[],all=[];let y=14;
  (function pos(o){o.ls=o.d?wrap(o.t):[o.t];o.w=o.d?58+Math.max(...o.ls.map(s=>s.length))*7.6+(o.hk?26:0)+(o.hd?26:0):190;cw[o.d]=Math.max(cw[o.d]||0,o.w);all.push(o);
   if(!o.k.length){y+=o.d?27+19*o.ls.length:46;o.y=y}else{o.k.forEach(pos);o.y=(o.k[0].y+o.k[o.k.length-1].y)/2}})(root);
@@ -116,7 +116,7 @@ function render(){if(mode==='rp')return rpR();if(mode==='rm')return rmR();zb('')
   let c='<div class="chips">';for(let i=0;i<3;i++){const d=addD(T,i);c+=`<div class="chip ${d===sel?'on':''}" data-d="${d}"><b>${['Bugün','Yarın','Öbür gün'][i]}</b><small>${fmt(d,{day:'numeric',month:'short'})} · %${stat(d).p}</small></div>`}
   ap.innerHTML=c+`</div><div class="pg"><span>${fmt(sel,{weekday:'long'})}</span><div class="bar"><i style="width:${s.p}%"></i></div><span>${s.d}/${s.t} · %${s.p}</span></div>`;
   $('#dt').value=sel}
- else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v17)</div>`;$('#dt').value=eff}
+ else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v18)</div>`;$('#dt').value=eff}
  $('#tD').classList.toggle('on',m==='day');$('#tR').classList.toggle('on',m==='rt');save()}
 // pan / zoom
 const map=$('#map'),P=new Map();let pd=0;
@@ -155,7 +155,7 @@ function del(n){if(n.rem){const rr=S.rem.find(x=>x.id===n.rem);if(rr){if(rr.days
 function move(n,d){const D=mode==='rt'?eff:sel,sib=S.nodes.filter(x=>x.p===n.p&&act(x,D,mode)),i=sib.indexOf(n),o=sib[i+d];if(!o)return;
  const a=S.nodes.indexOf(n),b=S.nodes.indexOf(o);[S.nodes[a],S.nodes[b]]=[S.nodes[b],S.nodes[a]];render()}
 function menu(n){const D=mode==='rt'?eff:sel,tm=n.tm&&mode==='day';
- modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],['⏰ Tekrarlayan alarm',()=>iaMgr(n)],['📎 Medya',()=>mgr(n)],...(mode==='day'?[['↪ Görev Aktar',()=>xferMenu(n)]]:[]),
+ modal(txt(n,D,mode),null,[['Alt dal ekle',()=>addNode(n.id)],['Yeniden adlandır',()=>ren(n)],['↑ Yukarı taşı',()=>move(n,-1)],['↓ Aşağı taşı',()=>move(n,1)],...rx(n),['📝 Açıklama ('+(dsc(n,mode==='rt'?eff:sel,mode).trim()?'Var':'Yok')+')',()=>descEd(n)],...(n.rem?[]:[['⏱ Saat Ayarla ('+(timeOf(n,mode==='rt'?eff:sel,mode)||'Yok')+')',()=>tkEd(n)]]),['⏰ Tekrarlayan alarm',()=>iaMgr(n)],['📎 Medya',()=>mgr(n)],...(mode==='day'?[['↪ Görev Aktar',()=>xferMenu(n)]]:[]),
  [mode==='rt'?'Rutinden kaldır ('+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası)':tm?'Sadece bu gün için gizle':'Sil',()=>del(n),'dng'],['Kapat']])}
 $('#g').onclick=e=>{if(mv>6)return;const t=e.target.closest('[data-a]');if(!t)return;const id=t.dataset.id,a=t.dataset.a;
  if(a==='chk')stMenu(id)
@@ -380,7 +380,7 @@ function alSound(on){clearInterval(sv);clearInterval(vv);try{navigator.vibrate&&
  beep();sv=setInterval(beep,1100);try{if(navigator.vibrate){navigator.vibrate([500,250,500]);vv=setInterval(()=>navigator.vibrate([500,250,500]),1500)}}catch(e){}
  setTimeout(()=>{const e=$('#aS');if(e&&(!ac||ac.state!=='running'))e.textContent='Ses için ekrana dokun'},400)}
 function alShow(a){ring=a;const v=$('#al');v.hidden=false;
- v.innerHTML=`<div class='aT'>⏰ ${esc(a.title)}</div><div class='aD'>${esc((a.desc||'').slice(0,200))}</div><div class='aB'>${a.opts.map(m=>`<button data-sn='${m}'>${m} dk ertele</button>`).join('')}<button data-sn='0' class='k'>Kapat</button></div><div id='aS'></div>`;
+ v.innerHTML=`<div class='aT'>⏰ ${esc(a.title)}</div><div class='aD'>${esc((a.desc||'').slice(0,200))}</div><div class='aB'>${a.opts.map(m=>`<button data-sn='${m}'>${m==60?'1 saat':m+' dk'} ertele</button>`).join('')}<button data-sn='0' class='k'>Kapat</button></div><div id='aS'></div>`;
  alSound(1);try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>{a.wl=w}).catch(()=>{})}catch(e){}
  ntDel(a.base?'z-'+sq(a.base):sq(a.key))}
 function alEnd(m){const a=ring;if(!a)return;alSound(0);try{a.wl&&a.wl.release()}catch(e){}
@@ -392,8 +392,9 @@ function alTick(){if(window.AndroidBridge)return;const now=Date.now(),a=now-6e5;
  for(const r of S.rem||[])for(const t of remOcc(r,a,now)){const k='r:'+r.id+':'+t,D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);
   if(n&&S.done[key(D,n.id)]){AL.fired[k]=AL.fired[k]||now;continue}add(k,r.title,r.desc,[10,20],'r')}
  for(const i of S.ia||[])for(const t of iaOcc(i,a,now))add('i:'+i.id+':'+t,i.title,i.desc,[10],'i',i.q);
+ for(const k of tkOcc(now-6e5,now)){if(k.done)continue;add('k:'+k.n.id+':'+k.t,k.title,k.desc,[10,20,60],'k')};
  for(const k of Object.keys(AL.sn)){const s=AL.sn[k];
-  if(s.kind==='r'){const[,id,tt]=k.split(':'),D=iso(new Date(+tt)),n=S.nodes.find(x=>x.rem===id&&x.day===D);if(n&&S.done[key(D,n.id)]){delete AL.sn[k];continue}}
+  if(s.kind==='k'){const[,kid,ktt]=k.split(':');if(S.done[key(iso(new Date(+ktt)),kid)]){delete AL.sn[k];continue}}if(s.kind==='r'){const[,id,tt]=k.split(':'),D=iso(new Date(+tt)),n=S.nodes.find(x=>x.rem===id&&x.day===D);if(n&&S.done[key(D,n.id)]){delete AL.sn[k];continue}}
   if(s.until<=now){delete AL.sn[k];q.push({key:k+':s'+s.until,base:k,title:s.title,desc:s.desc,opts:s.opts,kind:s.kind,qh:s.qh})}}
  for(const k of Object.keys(AL.fired))if(now-AL.fired[k]>2*864e5)delete AL.fired[k];
  alSave();if(!ring&&q.length)alShow(q.shift())}
@@ -434,7 +435,9 @@ $('#mb').addEventListener('click',e=>{const t=e.target.closest('[data-ia]');if(!
 function nativeSync(){if(!window.AndroidBridge)return;const now=Date.now(),L=[];
  for(const r of S.rem||[])for(const t of remOcc(r,now-60000,now+7*864e5)){const D=iso(new Date(t)),n=S.nodes.find(x=>x.rem===r.id&&x.day===D);if(n&&S.done[key(D,n.id)])continue;L.push({id:'r-'+r.id+'-'+t,t,title:r.title,desc:r.desc||'',opts:[10,20],tone:(r.tone&&r.tone.uri)||defTone()})}
  for(const i of S.ia||[])for(const t of iaOcc(i,now-60000,now+2*864e5).slice(0,60))L.push({id:'i-'+i.id+'-'+t,t,title:i.title,desc:i.desc||'',opts:[10],q:(i.q&&i.q.on?[hmin(i.q.from),hmin(i.q.to)]:null),tone:(i.tone&&i.tone.uri)||defTone()});
- L.sort((a,b)=>a.t-b.t);const j=JSON.stringify(L.slice(0,200));if(j!==nsLast){try{AndroidBridge.setAlarms(j);nsLast=j}catch(e){}}const kp=[];if(S.cfg&&S.cfg.tone)kp.push(S.cfg.tone.uri);(S.rem||[]).forEach(r=>r.tone&&kp.push(r.tone.uri));(S.ia||[]).forEach(i=>i.tone&&kp.push(i.tone.uri));const kj=JSON.stringify(kp);if(kj!==window._ks){window._ks=kj;try{AndroidBridge.keepTones&&AndroidBridge.keepTones(kj)}catch(e){}}}
+ for(const k of tkOcc(now-432e5,now+7*864e5)){const id='k-'+k.n.id+'-'+k.D+'-'+k.t;if(k.done){L.push({id,t:k.t,x:1});continue}if(k.t<now-60000)continue;L.push({id,t:k.t,title:k.title,desc:(k.desc||'').slice(0,200),opts:[10,20,60],tone:defTone()})}
+ for(const xid of window._xk||[])L.push({id:xid,t:0,x:1});
+ L.sort((a,b)=>a.t-b.t);const j=JSON.stringify(L.slice(0,400));if(j!==nsLast){try{AndroidBridge.setAlarms(j);nsLast=j;window._xk=[]}catch(e){}}const kp=[];if(S.cfg&&S.cfg.tone)kp.push(S.cfg.tone.uri);(S.rem||[]).forEach(r=>r.tone&&kp.push(r.tone.uri));(S.ia||[]).forEach(i=>i.tone&&kp.push(i.tone.uri));const kj=JSON.stringify(kp);if(kj!==window._ks){window._ks=kj;try{AndroidBridge.keepTones&&AndroidBridge.keepTones(kj)}catch(e){}}}
 async function saveBlob(b,name){
  if(window.AndroidBridge&&AndroidBridge.beginSave){try{if(!AndroidBridge.beginSave(name))throw 0;const C=786432;
   for(let o=0;o<b.size;o+=C){const u=new Uint8Array(await b.slice(o,o+C).arrayBuffer());let s='';for(let k=0;k<u.length;k+=8192)s+=String.fromCharCode.apply(null,u.subarray(k,k+8192));if(!AndroidBridge.chunk(btoa(s)))throw 0}
@@ -465,7 +468,7 @@ async function xfer(n,T,force){const D=sel,fm=d=>fmt(d,{day:'numeric',month:'lon
  const cp=(x,par,root)=>{const id=uid(),nn={id,p:par,day:T,t:x.rem?x.t:txt(x,D,'day')},sr=x.rem?S.rem.find(y=>y.id===x.rem):null;
   if(sr){const r2={id:uid(),on:1,title:sr.title,date:T,time:sr.time,desc:sr.desc||'',days:[],media:cpm(sr.media||[])};if(sr.tone)r2.tone=sr.tone;rems.push(r2);nn.rem=r2.id;nn.rt=sr.time;nn.t=sr.title;if(ms(T,sr.time)<Date.now())late=true;
    const li=(S.ia||[]).filter(a=>a.nid==='rem:'+sr.id);if(sr.days&&sr.days.length)skipped+=li.length;else li.forEach(a=>cia(a,'rem:'+r2.id))}
-  else{const d=dsc(x,D,'day');if(d.trim())nn.desc=d;const m=mids(x,D,'day');if(m.length)nn.media=cpm(m);
+  else{const d=dsc(x,D,'day');if(d.trim())nn.desc=d;const tt=timeOf(x,D,'day');if(tt)nn.time=tt;const m=mids(x,D,'day');if(m.length)nn.media=cpm(m);
    const li=(S.ia||[]).filter(a=>a.nid===x.id);if(x.tm)skipped+=li.length;else li.forEach(a=>cia(a,id))}
   if(root)nn.src={id:n.id,day:D};nodes.push(nn);
   S.nodes.filter(c=>c.p===x.id&&act(c,D,'day')).forEach(c=>cp(c,id,false))};
@@ -478,4 +481,28 @@ async function xfer(n,T,force){const D=sel,fm=d=>fmt(d,{day:'numeric',month:'lon
  if(!persist()){const[a,b,c,d]=JSON.parse(snap);S.nodes=a;S.rem=b;S.ia=c;S.rep=d;for(const t of done)try{await mDel(t)}catch(x){}return modal('Aktarılamadı: kayıt yapılamadı (depolama dolu olabilir). Hiçbir şey değiştirilmedi.',null,[['Tamam']])}
  render();ntSync();nativeSync();
  modal('✔ Görev '+fm(T)+' gününe aktarıldı'+(nodes.length>1?' (+'+(nodes.length-1)+' alt görev)':'')+'.'+(jobs.length?' '+jobs.length+' medya kopyalandı.':'')+(skipped?' Rutin ya da haftalık görevin alarmları kopyalanmadı, onlar zaten kendi düzeninde çalışıyor.':'')+(ias.length&&past?' Geçmiş güne aktarıldığı için kopyalanan tekrarlayan alarmlar duraklatıldı.':'')+(late?' Hatırlatıcı saati geçmişte kaldığı için o alarm çalmaz.':''),null,[['Aktarılan günü aç',()=>{sel=T;mode='day';render();fit()}],['Tamam']])}
+// --- görev saati + görev alarmı ---
+function timeOf(n,D,m){if(n.rem)return '';if(!n.tm)return n.time||'';
+ if(m==='day'){const k=key(D,n.id);if(S.dt&&k in S.dt)return S.dt[k]}
+ let r='';for(const[f,t]of n.ts||[])if(f<=D)r=t;return r}
+function tmk(n,D,m){const t=timeOf(n,D,m);return t?' ('+t.replace(':','.')+')':''}
+function tkOcc(a,b){const out=[];
+ for(let D=iso(new Date(a-864e5));D<=iso(new Date(b));D=addD(D,1))for(const o of lay(D,'day')){if(!o.d||o.n.rem)continue;const tm=timeOf(o.n,D,'day');if(!tm)continue;const t=ms(D,tm);if(t<a||t>b)continue;
+  out.push({n:o.n,D,t,done:!!S.done[key(D,o.n.id)],title:txt(o.n,D,'day'),desc:dsc(o.n,D,'day')})}return out}
+function tkSet(n,v,scope){const D=mode==='rt'?eff:sel,snap=JSON.stringify([S.nodes,S.dt||{}]);
+ window._xk=(window._xk||[]).concat(tkOcc(Date.now()-432e5,Date.now()+7*864e5).filter(k=>k.n.id===n.id).map(k=>'k-'+k.n.id+'-'+k.D+'-'+k.t));
+ if(!n.tm)n.time=v;
+ else if(scope==='day'){S.dt=S.dt||{};S.dt[key(D,n.id)]=v}
+ else{n.ts=(n.ts||[]).filter(x=>x[0]<D);n.ts.push([D,v]);n.ts.sort((a,b)=>a[0]<b[0]?-1:1);if(S.dt)delete S.dt[key(D,n.id)]}
+ if(!persist()){const r=JSON.parse(snap);S.nodes=r[0];S.dt=r[1];render();return modal('Saat kaydedilemedi (depolama dolu olabilir). Değişiklik yapılmadı.',null,[['Tamam']])}
+ render();nativeSync();alTick()}
+function tkEd(n){const m=mode,D=m==='rt'?eff:sel,cur=timeOf(n,D,m),dayR=m==='day'&&n.tm,
+ note=!n.tm?'Bu görevin alarmı seçtiğin saatte çalar (zil sesi: varsayılan).':m==='rt'?'Rutin saati — '+fmt(eff,{day:'numeric',month:'short'})+' ve sonrası için geçerli, geçmiş günler değişmez.':'Sadece bu güne ya da rutinin tüm günlerine (bugünden itibaren) ayarlayabilirsin.',
+ b=[['Kaydet'+(dayR?' (sadece bu gün)':''),()=>{const v=$('#tk1').value;if(!v)return tkEd(n);tkSet(n,v,dayR?'day':'routine')},'pri']];
+ if(dayR)b.push(['Kaydet (rutinin tüm günleri)',()=>{const v=$('#tk1').value;if(!v)return tkEd(n);tkSet(n,v,'routine')}]);
+ b.push([dayR?'Saati kaldır (sadece bu gün)':'Saati kaldır',()=>tkSet(n,'',dayR?'day':'routine'),'dng']);
+ if(dayR)b.push(['Rutinden kaldır (bugünden itibaren)',()=>tkSet(n,'','routine'),'dng']);
+ b.push(['Vazgeç']);
+ modal('⏱ '+txt(n,D,m),null,b);
+ $('#mb').insertAdjacentHTML('afterbegin','<div class="note">'+note+'</div><input id="tk1" type="time" value="'+(cur||'')+'">')}
 </script></body></html>
