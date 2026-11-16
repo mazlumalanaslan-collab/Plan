@@ -117,7 +117,7 @@ function render(){if(mode==='rp')return rpR();if(mode==='rm')return rmR();zb('')
   let c='<div class="chips">';for(let i=0;i<3;i++){const d=addD(T,i);c+=`<div class="chip ${d===sel?'on':''}" data-d="${d}"><b>${['Bugün','Yarın','Öbür gün'][i]}</b><small>${fmt(d,{day:'numeric',month:'short'})} · %${stat(d).p}</small></div>`}
   ap.innerHTML=c+`</div><div class="pg"><span>${fmt(sel,{weekday:'long'})}</span><div class="bar"><i style="width:${s.p}%"></i></div><span>${s.d}/${s.t} · %${s.p}</span></div>`;
   $('#dt').value=sel}
- else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin'],['p','Hap']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v19)</div>`;$('#dt').value=eff}
+ else{ap.innerHTML=`<div class="chips">${[['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin'],['p','Hap']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}</div>${rk=='m'?'<div class="note">Seçtiğin gün o ayda yoksa (ör. 31) görev o ay atlanır, ayın son gününe taşınmaz.</div>':''}<div class="note">Rutin düzenleme: yaptığın değişiklikler <b>${fmt(eff,{day:'numeric',month:'long',year:'numeric'})}</b> tarihinden itibaren geçerli olur. Geçmiş günler değişmez. Tarihi yukarıdan seçebilirsin.</div><div class="row" style="margin-top:8px"><button class="tab" onclick="bk()">Verileri yedekle</button><button class="tab" onclick="rs()">Geri yükle</button></div><div class="note">Sürüm: alarm + açıklama + medya + taşıma (v20)</div>`;$('#dt').value=eff}
  if(m==='rt'&&rk==='p'){$('#sub').innerHTML='<div class="chips">'+RKCH()+'</div>';$('#nav').style.display='none';$('#map').hidden=true;$('#rp').hidden=false;zb('none');hapPanel()}
  $('#tD').classList.toggle('on',m==='day');$('#tR').classList.toggle('on',m==='rt');save()}
 // pan / zoom
@@ -282,11 +282,11 @@ function hold(n){if(n.rem){const r=S.rem.find(x=>x.id===n.rem);if(r)return{g:()=
 function mids(n,D,m){let a=[];if(n.rem){const r=(S.rem||[]).find(x=>x.id===n.rem);if(r)a=r.media||[]}
  if(n.tm){a=a.concat(n.media||[]);if(m==='day')a=a.concat((S.dm||{})[key(D,n.id)]||[])}else if(!n.rem)a=n.media||[];return a}
 function mk(n,D,m){const c=mids(n,D,m).length;return c?' 📎'+c:''}
-async function addFiles(fs,dur){const own=MC.own;let bad=[];
+async function addFiles(fs,dur){const own=MC.own;let bad=[];fs=[...fs].map(norm);busy('Kaydediliyor ('+fs.length+' dosya)…');
  for(const f of fs){if(!/^(image|video|audio)\//.test(f.type)){bad.push((f.name||'dosya')+': desteklenmeyen biçim');continue}
   try{const id='m'+uid()+Date.now().toString(36),d=dur||await dura(f);await mPut({id,blob:f,name:f.name||'kayit',type:f.type,size:f.size,dur:d,ts:Date.now()});own.s([...own.g(),id])}
-  catch(e){bad.push((f.name||'dosya')+': '+(e&&e.name=='QuotaExceededError'?'depolama alanı yetersiz':'kaydedilemedi'))}}
- try{navigator.storage.persist()}catch(e){}save();render();bad.length?modal(bad.join(' • '),null,[['Tamam',()=>mgr(MC.n)]]):mgr(MC.n)}
+  catch(e){bad.push((f.name||'dosya')+': '+(e&&e.name=='QuotaExceededError'?'depolama alanı yetersiz':'kaydedilemedi ('+((e&&(e.name||e.message))||'hata')+')'))}}
+ try{navigator.storage.persist()}catch(e){}busyOff();save();render();bad.length?modal(bad.join(' • '),null,[['Tamam',()=>mgr(MC.n)]]):mgr(MC.n)}
 function pickF(acc,cap,multi,hd){const i=document.createElement('input');i.type='file';i.accept=acc;if(cap)i.setAttribute('capture',cap);if(multi)i.multiple=true;i.onchange=()=>i.files.length&&(hd||addFiles)([...i.files]);i.click()}
 async function mgr(n){MC={n,own:hold(n)};const D=mode==='rt'?eff:sel,ids=mids(n,D,mode),mine=MC.own.g(),rc=await Promise.all(ids.map(i=>mGet(i).catch(()=>null)));
  let est='';try{const e=await navigator.storage.estimate();est='Depolama: '+fz(e.usage)+' kullanılıyor / kota '+fz(e.quota)}catch(x){}
@@ -525,11 +525,18 @@ async function hapOpen(){const h=hp();let lost=0,got=null;
  if(lost)return modal(lost+' içeriğin dosyası bulunamadı (silinmiş ya da bu cihazda yok) ve listeden çıkarıldı.',null,[['Tamam',go]]);go()}
 function hapBtn(x,y,w){const cx=x+w/2,t=y+26;return `<g data-a="hap"><rect x="${x}" y="${t}" width="${w}" height="78" rx="14" style="fill:#ff9800;stroke:#ffc107;stroke-width:2.5;cursor:pointer"/><text text-anchor="middle" style="font-size:15px;font-weight:800;fill:#111;pointer-events:none"><tspan x="${cx}" y="${t+26}">HEDEF, AMAÇ,</tspan><tspan x="${cx}" y="${t+45}">MOTİVASYON</tspan><tspan x="${cx}" y="${t+64}">HAPI</tspan></text></g>`}
 function RKCH(){return [['d','Günlük Rutin'],['w','Haftalık Rutin'],['m','Aylık Rutin'],['p','Hap']].map(([k,l])=>`<div class="chip ${rk==k?'on':''}" data-rk="${k}"><b>${l}</b></div>`).join('')}
-async function hapAdd(fs,dur){const h=hp();let bad=[];
- for(const f of fs){if(!/^(image|video|audio)\//.test(f.type)){bad.push((f.name||'dosya')+': desteklenmeyen biçim');continue}
-  try{const id='m'+uid()+Date.now().toString(36),d=dur||await dura(f);await mPut({id,blob:f,name:f.name||'kayit',type:f.type,size:f.size,dur:d,ts:Date.now()});h.items.push(id)}
-  catch(e){bad.push((f.name||'dosya')+': '+(e&&e.name=='QuotaExceededError'?'depolama alanı yetersiz':'kaydedilemedi'))}}
- try{navigator.storage.persist()}catch(e){}save();render();if(bad.length)modal(bad.join(' • '),null,[['Tamam']])}
+function inferType(f){if(/^(image|video|audio)\//.test(f.type))return f.type;const e=(f.name||'').split('.').pop().toLowerCase(),M={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',mp4:'video/mp4',m4v:'video/mp4',mov:'video/quicktime',mkv:'video/x-matroska',webm:'video/webm','3gp':'video/3gpp',avi:'video/x-msvideo',mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',wav:'audio/wav',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',flac:'audio/flac',amr:'audio/amr'};return M[e]||f.type||''}
+function norm(f){const ty=inferType(f);return ty&&ty!==f.type?new File([f],f.name||'dosya',{type:ty}):f}
+function busy(t){let e=document.getElementById('bz');if(!e){e=document.createElement('div');e.id='bz';e.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#000d;color:#fff;padding:12px 16px;border-radius:12px;z-index:50;max-width:88%;text-align:center;font-size:14px';document.body.appendChild(e)}e.textContent=t;e.style.display='block'}
+function busyOff(t){const e=document.getElementById('bz');if(!e)return;if(t){e.textContent=t;setTimeout(()=>{e.style.display='none'},2500)}else e.style.display='none'}
+async function hapAdd(fs,dur){const h=hp();let bad=[],ok=0;fs=[...fs].map(norm);
+ for(let k=0;k<fs.length;k++){const f=fs[k],nm=f.name||'dosya';
+  if(!/^(image|video|audio)\//.test(f.type)){bad.push(nm+': desteklenmeyen biçim ('+(f.type||'tür bilinmiyor')+')');continue}
+  busy('Kaydediliyor '+(k+1)+'/'+fs.length+': '+nm+' ('+fz(f.size)+')');
+  try{const id='m'+uid()+Date.now().toString(36),d=dur||await dura(f);await mPut({id,blob:f,name:nm,type:f.type,size:f.size,dur:d,ts:Date.now()});h.items.push(id);ok++}
+  catch(e){bad.push(nm+': '+(e&&e.name=='QuotaExceededError'?'depolama alanı yetersiz':'kaydedilemedi ('+((e&&(e.name||e.message))||'hata')+')'))}}
+ try{navigator.storage.persist()}catch(e){}save();render();busyOff(ok?ok+' içerik eklendi':'');
+ if(bad.length)modal(bad.join(' • '),null,[['Tamam']])}
 async function hapRep(old,f){if(!f)return;if(!/^(image|video|audio)\//.test(f.type))return modal((f.name||'dosya')+': desteklenmeyen biçim',null,[['Tamam']]);const h=hp();
  try{const id='m'+uid()+Date.now().toString(36),d=await dura(f);await mPut({id,blob:f,name:f.name||'kayit',type:f.type,size:f.size,dur:d,ts:Date.now()});
   const sw=a=>a.map(x=>x===old?id:x);h.items=sw(h.items);h.ord=sw(h.ord);Object.keys(h.days).forEach(k=>{if(h.days[k]===old)h.days[k]=id});if(h.last===old)h.last=id;
